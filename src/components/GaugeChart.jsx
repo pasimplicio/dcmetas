@@ -46,7 +46,6 @@ const GaugeChart = ({ percent, size = 180, strokeWidth = 24 }) => {
           strokeDasharray={circumference + " " + circumference}
           strokeDashoffset={strokeDashoffset}
           className={`${colorClass} transition-all duration-1000 ease-out`}
-          transform={`scale(-1, 1) translate(-${size}, 0)`}
         />
       </svg>
       {/* Text in the middle */}

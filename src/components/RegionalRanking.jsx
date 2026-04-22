@@ -16,7 +16,7 @@ const CustomTooltip = ({ active, payload, label }) => {
                 </div>
                 <span className="font-black">{formatter.format(data.realizado)}</span>
             </div>
-            <div className="flex justify-between items-center gap-4 text-[var(--test-muted)] pt-1">
+            <div className="flex justify-between items-center gap-4 text-[var(--text-muted)] pt-1">
                 <div className="flex items-center gap-2">
                   <Target size={16} className="opacity-70" />
                   <span className="font-medium">Meta</span>
@@ -63,18 +63,15 @@ const RegionalRanking = ({ data }) => {
                </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" horizontal={false} opacity={0.5} />
-            <XAxis type="number" hide domain={[0, 'dataMax + 20']} />
+            <XAxis type="number" hide domain={[0, 'auto']} />
             <YAxis type="category" dataKey="name" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} width={120} />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--brand-500)', opacity: 0.05 }} />
             
-            <Bar dataKey="porcentagem" radius={[0, 6, 6, 0]} barSize={24}>
+            <Bar dataKey="realizado" radius={[0, 6, 6, 0]} barSize={24}>
                {chartData.map((entry, index) => (
                  <Cell key={`cell-${index}`} fill="url(#rankingGradient)" />
                ))}
-               <LabelList dataKey="porcentagem" content={<CustomizedLabel />} />
             </Bar>
-
-            <ReferenceLine x={100} stroke="var(--brand-500)" strokeDasharray="3 3" opacity={0.5} />
           </BarChart>
         </ResponsiveContainer>
       </div>

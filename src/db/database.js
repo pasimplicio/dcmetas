@@ -1,36 +1,12 @@
-import Dexie from 'dexie';
+// Database module
+// All data is stored in SQLite via the Express backend (server.js port 3001).
+// This module is kept as a placeholder for potential future client-side caching.
 
-const db = new Dexie('DCMetasDB');
+const API_URL = 'http://localhost:3001/api';
 
-db.version(4).stores({
-  localidades: 'id, superintendencia, regional, nomeLocalidade, municipio',
-  arrecadacao: '++id, localidadeId, referencia, mesPagamento, categoria, perfil, banco, formaArrecadacao, dataPagamento, valorPago, valorDevolucao, valorArrecadado',
-  metasLocalidade: '++id, referencia, localidadeId, valorPrevisto',
-  metasRegional: '++id, referencia, localidadeId, regional, categoria, valorPrevisto'
-});
-
-export const clearTable = async (tableName) => {
-  await db[tableName].clear();
+export const getStats = async () => {
+  const res = await fetch(`${API_URL}/stats`);
+  return await res.json();
 };
 
-export const insertBatch = async (tableName, items) => {
-  return await db[tableName].bulkAdd(items);
-};
-
-export const getMetasByMonthAndRegion = async (referencia) => {
-  return await db.metasRegional.where('referencia').equals(referencia).toArray();
-};
-
-export const getMetasLocalidadeByMonth = async (referencia) => {
-  return await db.metasLocalidade.where('referencia').equals(referencia).toArray();
-};
-
-export const getArrecadacaoByMonth = async (referencia) => {
-  return await db.arrecadacao.where('mesPagamento').equals(referencia).toArray();
-};
-
-export const getLocalidades = async () => {
-  return await db.localidades.toArray();
-};
-
-export default db;
+export default { API_URL };

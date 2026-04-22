@@ -1,20 +1,19 @@
 import { useOutletContext, NavLink } from 'react-router-dom';
-import { Database, Sparkles, Landmark, Users, CreditCard } from 'lucide-react';
+import { Database, Sparkles } from 'lucide-react';
 import KpiCard from '../components/KpiCard';
 import AnnualPerformance from '../components/AnnualPerformance';
 import DailyPerformance from '../components/DailyPerformance';
 import RegionalRanking from '../components/RegionalRanking';
 import DetailTable from '../components/DetailTable';
-import DistributionChart from '../components/DistributionChart';
 import { useDashboardData } from '../hooks/useDashboardData';
 
 const Dashboard = () => {
-  const { referencia } = useOutletContext();
+  const { referencia, regional: selectedRegional } = useOutletContext();
   const { 
     kpis, daily, annual, regional, 
     bancoRanking, perfilDistribution, formaDistribution, 
-    table, loading 
-  } = useDashboardData(referencia);
+    table, tableMonths, loading 
+  } = useDashboardData(referencia, selectedRegional);
 
   if (loading) {
       return (
@@ -76,33 +75,13 @@ const Dashboard = () => {
          </div>
       </div>
 
-
-      {/* Advanced Insights Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-         <DistributionChart 
-            data={bancoRanking} 
-            title="Arrecadação por Banco" 
-            icon={Landmark}
-         />
-         <DistributionChart 
-            data={formaDistribution} 
-            title="Formas de Pagamento" 
-            icon={CreditCard}
-         />
-         <DistributionChart 
-            data={perfilDistribution} 
-            title="Perfil de Unidade" 
-            icon={Users}
-         />
-      </div>
-
       {/* Bottom Table */}
       <div className="space-y-4">
          <div className="flex items-center gap-2">
             <div className="w-1 h-6 bg-brand-500 rounded-full"></div>
             <h3 className="text-lg font-black heading-text text-[var(--text-main)]">Detalhamento por Unidade</h3>
          </div>
-         <DetailTable data={table} year={referencia.split('/')[1]} />
+         <DetailTable data={table} months={tableMonths} />
       </div>
     </div>
   );

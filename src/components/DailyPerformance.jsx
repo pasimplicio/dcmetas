@@ -25,7 +25,7 @@ const DailyPerformance = ({ data }) => {
       
       <div className="flex-1 w-full min-h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+          <BarChart data={data} margin={{ top: 10, right: 0, left: 10, bottom: 0 }}>
             <defs>
                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
                  <stop offset="0%" stopColor="var(--brand-400)" stopOpacity={1} />
@@ -34,7 +34,16 @@ const DailyPerformance = ({ data }) => {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} opacity={0.5} />
             <XAxis dataKey="day" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
-            <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
+            <YAxis 
+              stroke="var(--text-muted)" 
+              fontSize={11} 
+              tickLine={false} 
+              axisLine={false} 
+              width={50}
+              tickFormatter={(value) => 
+                new Intl.NumberFormat('pt-BR', { notation: 'compact', compactDisplay: 'short' }).format(value)
+              }
+            />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--brand-500)', opacity: 0.05 }} />
             <Bar dataKey="realizado" radius={[4, 4, 0, 0]}>
                {data.map((entry, index) => (

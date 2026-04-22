@@ -47,7 +47,7 @@ const AnnualPerformance = ({ data }) => {
       
       <div className="flex-1 w-full min-h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <AreaChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
             <defs>
               <linearGradient id="colorRealizado" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="var(--brand-500)" stopOpacity={0.4}/>
@@ -56,7 +56,16 @@ const AnnualPerformance = ({ data }) => {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} opacity={0.5} />
             <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
-            <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+            <YAxis 
+              stroke="var(--text-muted)" 
+              fontSize={12} 
+              tickLine={false} 
+              axisLine={false} 
+              width={50}
+              tickFormatter={(value) => 
+                new Intl.NumberFormat('pt-BR', { notation: 'compact', compactDisplay: 'short' }).format(value)
+              }
+            />
             <Tooltip content={<CustomTooltip />} />
             <Area 
                 type="monotone" 

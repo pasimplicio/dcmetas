@@ -15,11 +15,32 @@ const parseMonetary = (value) => {
   return isNaN(num) ? 0 : num;
 };
 
-export const parseCSV = (file, type, onProgress) => {
+export const parseCSV = async (file, type, onProgress) => {
+  let input = file;
+  let totalSize = file.size;
+  
+  // Fix corrupted CSV format from system exports where fields with commas
+  // trigger Excel/PowerBI to wrap the ENTIRE row in quotes instead of just the field.
+  if (type === 'meta_regional' || type === 'meta_localidade') {
+     const text = await file.text();
+     input = text.split(/\r?\n/).map(line => {
+        let clean = line.trim();
+        // Detect whole-line quoting: starts with ", ends with ", and has internal structure
+        if (clean.startsWith('"') && clean.endsWith('"')) {
+           // Unwrap and unescape double quotes ("" -> ")
+           const unwrapped = clean.substring(1, clean.length - 1).replace(/""/g, '"');
+           // Simple heuristic: if it contains commas after unwrapping, it was likely a wrapped record
+           if (unwrapped.includes(',') || unwrapped.includes(';')) return unwrapped;
+        }
+        return clean;
+     }).join('\n');
+     totalSize = input.length;
+  }
+
   return new Promise((resolve, reject) => {
     const allRows = [];
     let globalRowIndex = 0;
-    Papa.parse(file, {
+    Papa.parse(input, {
       header: true,
       skipEmptyLines: 'greedy',
       dynamicTyping: false,
@@ -32,8 +53,8 @@ export const parseCSV = (file, type, onProgress) => {
           
           if (onProgress) {
             onProgress({
-              loaded: results.meta.cursor,
-              total: file.size
+               loaded: results.meta.cursor || 0,
+               total: totalSize || 1
             });
           }
         } catch (err) {
@@ -50,16 +71,6 @@ export const parseCSV = (file, type, onProgress) => {
     });
   });
 };
-
-const getTableForType = (type) => {
-    switch (type) {
-        case 'localidade': return 'localidades';
-        case 'arrecadacao': return 'arrecadacao';
-        case 'meta_localidade': return 'metasLocalidade';
-        case 'meta_regional': return 'metasRegional';
-        default: return null;
-    }
-}
 
 const normalizeRef = (rawRef) => {
   if (!rawRef) return '';
@@ -129,10 +140,17 @@ const transformData = (data, type, startIdx = 0) => {
             }
         }
 
-        // Use a 100% unique ID based on the row sequence in the file.
-        // This prevents the 10k "missing" rows from being overwritten.
         const locId = parseInt(row['Localidade'] || row['LOCALIDADE'] || row['ID LOCALIDADE'] || 0);
         const cloudId = `arr_${locId}_${startIdx + idx}`;
+
+        const rawArr = row['VALOR ARR'] || row['VALOR ARRECADADO'] || row['VALOR_ARRECADADO'];
+        const vDev = parseMonetary(row['VALOR DEV'] || row['VALOR DEVOLUÇÃO'] || row['VALOR_DEVOLUCAO']);
+        
+        // VALOR ARR já vem com o sinal correto (negativo = devolução).
+        // Só recalcula (VALOR - VALOR DEV) se VALOR ARR não existir no CSV.
+        const valorArrecadado = rawArr 
+          ? parseMonetary(rawArr) 
+          : parseMonetary(row['VALOR'] || row['valor']) - vDev;
 
         return {
           cloudId,
@@ -143,10 +161,10 @@ const transformData = (data, type, startIdx = 0) => {
           perfil: row['PERFIL'],
           banco: row['BANCO'],
           formaArrecadacao: row['FORMA DE ARRECADACAO'] || '',
-          dataPagamento: dataArrec,
+          dataPagamento: dataRaw,
           valorPago: parseMonetary(row['VALOR PAG'] || row['VALOR PAGO'] || row['VALOR_PAGO'] || row['valor_pago']),
-          valorDevolucao: parseMonetary(row['VALOR DEV'] || row['VALOR DEVOLUÇÃO'] || row['VALOR_DEVOLUCAO']),
-          valorArrecadado: parseMonetary(row['VALOR ARR'] || row['VALOR ARRECADADO'] || row['VALOR_ARRECADADO'] || row['VALOR'] || row['valor']),
+          valorDevolucao: vDev,
+          valorArrecadado: valorArrecadado,
           valorFaturado: parseMonetary(row['VL FATURADO'] || row['VALOR FATURADO'] || row['VL_FATURADO'] || row['valor_faturado']),
           qtdDocumentos: parseInt(row['QTD'] || row['QTD DOCUMENTOS PAGOS'] || row['qtd_documentos'] || 0)
         };
@@ -187,34 +205,4 @@ const transformData = (data, type, startIdx = 0) => {
     default:
       return [];
   }
-};
-
-export const aggregateData = (rows) => {
-  const map = {};
-  rows.forEach(r => {
-    // Create a composite key to group by all relevant dimensions
-    const keyParts = [
-      r.localidadeId,
-      r.dataPagamento,
-      r.referencia,
-      r.categoria,
-      r.perfil,
-      r.banco,
-      r.formaArrecadacao
-    ];
-    const key = keyParts.join('|');
-
-    if (!map[key]) {
-      // Create a deterministic ID for local persistence
-      const cloudId = `arr_${r.localidadeId}_${r.dataPagamento.replace(/\//g, '')}_${r.referencia.replace(/\//g, '')}_${(r.categoria || 'REC').substring(0,3)}`;
-      map[key] = { ...r, cloudId };
-    } else {
-      map[key].valorArrecadado += (r.valorArrecadado || 0);
-      map[key].valorPago += (r.valorPago || 0);
-      map[key].valorDevolucao += (r.valorDevolucao || 0);
-      map[key].valorFaturado += (r.valorFaturado || 0);
-      map[key].qtdDocumentos += (r.qtdDocumentos || 0);
-    }
-  });
-  return Object.values(map);
 };

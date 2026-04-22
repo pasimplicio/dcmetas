@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { UploadCloud, CheckCircle2, AlertCircle, RefreshCw, Trash2, Info } from 'lucide-react';
-import { parseCSV, aggregateData } from '../services/csvParser';
+import { parseCSV } from '../services/csvParser';
 
 const API_URL = 'http://localhost:3001/api';
+
+const BATCH_SIZE = 5000;
 
 const config = [
   { id: 'localidade', title: '1. Localidades (Dimensão)', fileMatch: 'dLocalidade', desc: 'Mapeamento de localidades e regionais. Essencial para o ranking.' },
@@ -14,6 +16,7 @@ const config = [
 const ImportData = () => {
   const [loading, setLoading] = useState(null);
   const [loadingText, setLoadingText] = useState('');
+  const [confirmClear, setConfirmClear] = useState(false);
   const [progress, setProgress] = useState(0);
   const [errorParse, setErrorParse] = useState(null);
   const fileInputRefs = useRef({});
@@ -44,6 +47,28 @@ const ImportData = () => {
     fileInputRefs.current[id].click();
   };
 
+  const sendInBatches = async (type, rows, onBatchProgress) => {
+    const totalBatches = Math.ceil(rows.length / BATCH_SIZE);
+    
+    for (let i = 0; i < totalBatches; i++) {
+      const batch = rows.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE);
+      const isFirst = i === 0;
+      
+      const response = await fetch(`${API_URL}/import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, data: batch, clearFirst: isFirst })
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || `Falha no batch ${i + 1}/${totalBatches}`);
+      }
+
+      onBatchProgress(Math.round(((i + 1) / totalBatches) * 100));
+    }
+  };
+
   const onFileChange = async (e, id) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -54,9 +79,9 @@ const ImportData = () => {
     setErrorParse(null);
     
     try {
-      // Parse CSV
+      // Phase 1: Parse CSV
       let rows = await parseCSV(file, id, (prog) => {
-          const pct = Math.round((prog.loaded / prog.total) * 100);
+          const pct = Math.round((prog.loaded / prog.total) * 50); // 0-50% for parsing
           setProgress(pct);
       });
       
@@ -65,19 +90,18 @@ const ImportData = () => {
         throw new Error("O arquivo parece estar vazio ou com formato inválido.");
       }
 
-      setLoadingText('Sincronizando Local...');
-      setProgress(0);
+      // Phase 2: Send in batches
+      setLoadingText(`Enviando ${rows.length.toLocaleString('pt-BR')} registros...`);
 
-      const response = await fetch(`${API_URL}/import`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: id, data: rows })
+      await sendInBatches(id, rows, (batchPct) => {
+        // 50-100% for uploading
+        setProgress(50 + Math.round(batchPct / 2));
+        setLoadingText(`Gravando... ${50 + Math.round(batchPct / 2)}%`);
       });
-
-      if (!response.ok) throw new Error('Falha ao gravar no banco local.');
 
       await fetchStats();
       setProgress(100);
+      setLoadingText('Concluído!');
     } catch (err) {
       console.error("Local Upload Error:", err);
       setErrorParse(`Erro ao processar: ${err.message}`);
@@ -91,15 +115,18 @@ const ImportData = () => {
     }
   };
 
-  const handleClearAll = async () => {
-      if(!window.confirm("Deseja apagar todos os dados do BANCO LOCAL?")) return;
+  const executeClear = async () => {
+      setConfirmClear(false);
       setLoading('clear');
       setLoadingText('Limpando...');
       setErrorParse(null);
       
       try {
           const res = await fetch(`${API_URL}/clear`, { method: 'POST' });
-          if (!res.ok) throw new Error('Falha ao limpar banco.');
+          if (!res.ok) {
+              const errData = await res.json().catch(() => ({}));
+              throw new Error(errData.error || 'Falha ao limpar banco.');
+          }
           await fetchStats();
       } catch (err) {
           console.error("Clear Error:", err);
@@ -112,6 +139,42 @@ const ImportData = () => {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500">
+
+      {/* Modal de Confirmação */}
+      {confirmClear && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center" onClick={() => setConfirmClear(false)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative glass-panel border border-[var(--border-color)] p-8 rounded-3xl shadow-2xl max-w-md w-full mx-4 animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-4 mb-6">
+              <div className="p-3 bg-red-500/10 rounded-2xl">
+                <Trash2 size={28} className="text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-[var(--text-main)]">Limpar Base de Dados</h3>
+                <p className="text-sm text-[var(--text-muted)] mt-1">Esta ação não pode ser desfeita.</p>
+              </div>
+            </div>
+            <p className="text-[var(--text-muted)] font-medium mb-8">
+              Todos os dados de <strong className="text-[var(--text-main)]">Localidades, Arrecadação, Metas Regionais e Metas Locais</strong> serão apagados permanentemente.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setConfirmClear(false)}
+                className="px-6 py-2.5 rounded-xl font-bold text-[var(--text-muted)] bg-[var(--bg-surface)] border border-[var(--border-color)] hover:bg-[var(--bg-main)] transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={executeClear}
+                className="px-6 py-2.5 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/20 transition-all"
+              >
+                Sim, Limpar Tudo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-8 glass-panel border border-[var(--border-color)] gap-6">
         <div>
           <h2 className="text-3xl font-black heading-text text-[var(--text-main)] tracking-tight">Gestão da Base de Dados</h2>
@@ -122,7 +185,7 @@ const ImportData = () => {
           </div>
         </div>
         <button 
-          onClick={handleClearAll} 
+          onClick={() => setConfirmClear(true)} 
           disabled={loading === 'clear'}
           className="group flex items-center gap-2 px-6 py-3 bg-red-50 dark:bg-red-500/10 text-red-600 border border-red-200 dark:border-red-500/20 rounded-2xl hover:bg-red-600 hover:text-white transition-all font-bold disabled:opacity-50"
         >

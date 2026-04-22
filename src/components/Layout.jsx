@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { LayoutDashboard, Database, Sun, Moon, Menu, Landmark, Mail, Code, Droplets, ClipboardCheck, Scissors, Banknote } from 'lucide-react';
 import MonthYearSelector from './MonthYearSelector';
+import RegionalSelector from './RegionalSelector';
 
 import ErrorBoundary from './ErrorBoundary';
 
@@ -139,6 +140,8 @@ const Layout = () => {
     return `${month}/${year}`;
   });
 
+  const [regional, setRegional] = useState('TODAS');
+
   useEffect(() => {
     const root = window.document.documentElement;
     if (theme === 'dark') {
@@ -178,7 +181,10 @@ const Layout = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
+            {/* Regional Filter in Header */}
+            <RegionalSelector regional={regional} onChange={setRegional} />
+
             {/* Month/Year Selector in Header */}
             <MonthYearSelector referencia={referencia} onChange={setReferencia} />
           </div>
@@ -187,7 +193,7 @@ const Layout = () => {
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-6 md:p-8">
            <div className="max-w-7xl mx-auto">
               <ErrorBoundary>
-                <Outlet context={{ referencia, setReferencia }} />
+                <Outlet context={{ referencia, setReferencia, regional, setRegional }} />
               </ErrorBoundary>
            </div>
         </main>
