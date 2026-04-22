@@ -1,11 +1,14 @@
 import { TrendingUp, Target } from 'lucide-react';
 import GaugeChart from './GaugeChart';
 
-const formatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const formatterMoney = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const formatterNumber = new Intl.NumberFormat('pt-BR');
 
-const KpiCard = ({ title, data }) => {
+const KpiCard = ({ title, data, isCurrency = true }) => {
   const { realizado = 0, previsto = 0 } = data;
   const porcentagem = previsto > 0 ? (realizado / previsto) * 100 : 0;
+  
+  const format = (val) => isCurrency ? formatterMoney.format(val) : formatterNumber.format(val);
 
   return (
     <div className="bg-[var(--bg-surface)] dark:bg-slate-900/40 p-6 flex flex-col items-center rounded-3xl border border-[var(--border-color)] dark:border-brand-500/20 shadow-xl shadow-brand-500/5 transition-all card-hover group">
@@ -25,7 +28,7 @@ const KpiCard = ({ title, data }) => {
                 <span className="text-[10px] font-bold uppercase tracking-wider">Realizado</span>
              </div>
              <span className="text-xl font-black heading-text text-slate-800 dark:text-white tabular-nums leading-none mt-1">
-               {formatter.format(realizado)}
+               {format(realizado)}
              </span>
           </div>
 
@@ -37,7 +40,7 @@ const KpiCard = ({ title, data }) => {
                 <span className="text-[10px] font-bold uppercase tracking-wider">Previsto</span>
              </div>
              <span className="text-sm font-bold text-slate-600 dark:text-slate-400 tabular-nums leading-none mt-1">
-               {formatter.format(previsto)}
+               {format(previsto)}
              </span>
           </div>
       </div>

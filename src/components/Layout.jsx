@@ -1,16 +1,26 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Database, Sun, Moon, Menu, Landmark, Mail, Code, Droplets, ClipboardCheck, Scissors, Banknote } from 'lucide-react';
+import { LayoutDashboard, Database, Sun, Moon, Menu, Landmark, Mail, Code, Droplets, ClipboardCheck, Scissors, Banknote, ChevronDown } from 'lucide-react';
 import MonthYearSelector from './MonthYearSelector';
 import RegionalSelector from './RegionalSelector';
 
 import ErrorBoundary from './ErrorBoundary';
 
 const Sidebar = ({ isOpen, toggleSidebar, theme, toggleTheme }) => {
+  const [expandedMenu, setExpandedMenu] = useState(null);
+
   const navItems = [
     { to: "/", icon: <Banknote size={20} />, label: "ARRECADAÇÃO" },
     { to: "/hidrometracao", icon: <Droplets size={20} />, label: "HIDROMETRAÇÃO" },
-    { to: "/os", icon: <ClipboardCheck size={20} />, label: "ORDENS DE SERVIÇOS" },
+    { 
+      to: "/os", 
+      icon: <ClipboardCheck size={20} />, 
+      label: "ORDENS DE SERVIÇOS",
+      subItems: [
+        { label: "Pendentes", to: "/os/pendentes" },
+        { label: "Encerradas", to: "/os/encerradas" }
+      ]
+    },
     { to: "/cortes", icon: <Scissors size={20} />, label: "CORTES" },
     { to: "/importar", icon: <Database size={20} />, label: "Base de Dados" },
   ];
@@ -45,7 +55,9 @@ const Sidebar = ({ isOpen, toggleSidebar, theme, toggleTheme }) => {
 
         <nav className="flex-1 p-6 space-y-3">
           {navItems.map((item) => {
-            const isDeveloped = item.to === "/" || item.to === "/importar";
+            const isDeveloped = item.to === "/" || item.to === "/importar" || item.to === "/cortes";
+            const hasSubMenu = item.subItems && item.subItems.length > 0;
+            const isExpanded = expandedMenu === item.to;
             
             if (isDeveloped) {
               return (
@@ -75,14 +87,37 @@ const Sidebar = ({ isOpen, toggleSidebar, theme, toggleTheme }) => {
 
             // Undeveloped items - Visual only, no navigation
             return (
-              <div 
-                key={item.to}
-                className="flex items-center gap-4 px-6 py-4 rounded-[2rem] font-bold text-[var(--text-muted)] hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-slate-800/50 cursor-pointer transition-all duration-300 group select-none"
-              >
-                <span className="text-brand-500/70 group-hover:text-brand-500 transition-transform duration-300 group-hover:scale-110">
-                  {item.icon}
-                </span>
-                <span className="uppercase tracking-wider text-sm">{item.label}</span>
+              <div key={item.to} className="flex flex-col">
+                <div 
+                  onClick={() => hasSubMenu && setExpandedMenu(isExpanded ? null : item.to)}
+                  className="flex items-center justify-between px-6 py-4 rounded-[2rem] font-bold text-[var(--text-muted)] hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-slate-800/50 cursor-pointer transition-all duration-300 group select-none"
+                >
+                  <div className="flex items-center gap-4">
+                    <span className="text-brand-500/70 group-hover:text-brand-500 transition-transform duration-300 group-hover:scale-110">
+                      {item.icon}
+                    </span>
+                    <span className="uppercase tracking-wider text-sm">{item.label}</span>
+                  </div>
+                  {hasSubMenu && (
+                    <ChevronDown size={16} className={`transition-transform duration-300 ${isExpanded ? 'rotate-180 text-brand-500' : 'text-brand-500/70 group-hover:text-brand-500'}`} />
+                  )}
+                </div>
+                
+                {hasSubMenu && (
+                  <div className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-40 opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}>
+                    <div className="flex flex-col gap-1 pl-14 pr-4 border-l-2 border-brand-500/20 ml-8 py-1">
+                      {item.subItems.map((sub, idx) => (
+                        <div 
+                          key={idx}
+                          className="text-xs font-bold text-[var(--text-muted)] hover:text-brand-500 cursor-pointer py-2 transition-colors uppercase tracking-wider flex items-center gap-2"
+                        >
+                          <div className="w-1.5 h-1.5 rounded-full bg-brand-500/50"></div>
+                          {sub.label}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

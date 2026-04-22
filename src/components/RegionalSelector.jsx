@@ -31,24 +31,24 @@ const RegionalSelector = ({ regional, onChange }) => {
     <div className="relative">
       <button 
         onClick={handleToggle}
-        className="flex items-center gap-3 px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm hover:border-brand-300 dark:hover:border-brand-500 transition-all group"
+        className="flex items-center gap-3 px-5 py-2.5 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl shadow-sm ring-1 ring-black/5 dark:ring-white/5 hover:border-brand-500 transition-all group"
       >
         <MapPin size={18} className="text-brand-500 group-hover:scale-110 transition-transform" />
         <div className="flex flex-col items-start leading-tight">
-          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Regional</span>
-          <span className="text-sm font-black text-slate-700 dark:text-slate-200 uppercase truncate max-w-[120px]">
+          <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Regional</span>
+          <span className="text-sm font-black text-[var(--text-main)] uppercase truncate max-w-[120px]">
             {regional === 'TODAS' ? 'Todas' : regional}
           </span>
         </div>
-        <ChevronDown size={16} className={`text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={16} className={`text-[var(--text-muted)] transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 mt-3 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-2xl shadow-brand-500/10 z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3">Selecione a Regional</span>
+          <div className="absolute right-0 mt-3 w-64 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-3xl shadow-2xl shadow-brand-500/10 z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-3 border-b border-[var(--border-color)] bg-[var(--bg-main)]">
+              <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-3">Selecione a Regional</span>
             </div>
             <div className="max-h-80 overflow-y-auto py-2 custom-scrollbar">
               {regionais.map((reg) => (
@@ -60,8 +60,8 @@ const RegionalSelector = ({ regional, onChange }) => {
                   }}
                   className={`w-full text-left px-6 py-3 text-sm font-bold transition-colors flex items-center justify-between ${
                     regional === reg 
-                      ? 'bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400' 
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-brand-600 dark:hover:text-brand-400'
+                      ? 'bg-brand-500/10 text-brand-500' 
+                      : 'text-[var(--text-muted)] hover:bg-[var(--bg-main)] hover:text-brand-500'
                   }`}
                 >
                   <span className="uppercase">{reg === 'TODAS' ? 'Todas as Regionais' : reg}</span>

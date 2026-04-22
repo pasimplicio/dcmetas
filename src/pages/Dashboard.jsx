@@ -79,7 +79,7 @@ const Dashboard = () => {
       <div className="space-y-4">
          <div className="flex items-center gap-2">
             <div className="w-1 h-6 bg-brand-500 rounded-full"></div>
-            <h3 className="text-lg font-black heading-text text-[var(--text-main)]">Detalhamento por Unidade</h3>
+            <h3 className="text-lg font-black heading-text text-[var(--text-main)]">Detalhamento por Município</h3>
          </div>
          <DetailTable data={table} months={tableMonths} />
       </div>

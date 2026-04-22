@@ -202,6 +202,40 @@ const transformData = (data, type, startIdx = 0) => {
             cloudId: `met_reg_${locId}_${ref.replace(/\//g, '')}_${(cat || '').substring(0,3)}`
           }
       }).filter(row => row.referencia);
+      
+    case 'cortes':
+      return data.map(row => {
+          const rawRef = row['data emissao'] || row['Data Emissao'] || '';
+          let mesEmissao = '';
+          if (rawRef) {
+              if (rawRef.includes('-')) {
+                  const parts = rawRef.split('-'); // YYYY-MM-DD
+                  mesEmissao = `${parts[1].padStart(2, '0')}/${parts[0]}`;
+              } else if (rawRef.includes('/')) {
+                  const parts = rawRef.split('/'); // DD/MM/YYYY
+                  if (parts.length >= 3) {
+                      mesEmissao = `${parts[1].padStart(2, '0')}/${parts[2].substring(0, 4)}`;
+                  }
+              }
+          }
+
+          return {
+            matricula: parseInt(row['matricula'] || row['Matricula'] || 0),
+            categoria: row['Categoria Principal'] || row['categoria'],
+            localidadeId: parseInt(row['Localidade'] || row['localidade'] || 0),
+            situacaoAgua: row['Situacao da agua'] || row['situacao da agua'],
+            dataEmissao: rawRef,
+            mesEmissao: mesEmissao,
+            tipoDocumento: row['tipo documento'] || row['Tipo Documento'],
+            formaEmissao: row['forma emissao'] || row['Forma Emissao'],
+            acaoCobranca: row['acao cobranca'] || row['Acao Cobranca'],
+            valorDocumento: parseMonetary(row['valor documento'] || row['Valor Documento']),
+            situacaoAcao: (row['situacao acao'] || row['Situacao Acao'] || '').toUpperCase(),
+            dataAcao: row['data acao'] || row['Data Acao'],
+            situacaoDebito: (row['situacao debito'] || row['Situacao Debito'] || '').toUpperCase(),
+            motivoEncerramento: row['motivo encerramento'] || row['Motivo Encerramento']
+          };
+      });
     default:
       return [];
   }

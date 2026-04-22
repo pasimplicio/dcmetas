@@ -10,7 +10,8 @@ const config = [
   { id: 'localidade', title: '1. Localidades (Dimensão)', fileMatch: 'dLocalidade', desc: 'Mapeamento de localidades e regionais. Essencial para o ranking.' },
   { id: 'arrecadacao', title: '2. Arrecadação (Fato)', fileMatch: 'fArrecadacao', desc: 'Recebimentos diários. Alimenta as barras e cards de realizado. (Agrupado para performance)' },
   { id: 'meta_regional', title: '3. Metas Regionais', fileMatch: 'fMetaArrecRegional', desc: 'Metas globais e por categoria. Base para as porcentagens de 2026.' },
-  { id: 'meta_localidade', title: '4. Metas Locais (Opcional)', fileMatch: 'fMetaArrecLocalidade', desc: 'Metas detalhadas por unidade. Atualmente desconsiderado no dashboard.' }
+  { id: 'meta_localidade', title: '4. Metas Locais (Opcional)', fileMatch: 'fMetaArrecLocalidade', desc: 'Metas detalhadas por unidade. Atualmente desconsiderado no dashboard.' },
+  { id: 'cortes', title: '5. Cortes (Fato)', fileMatch: 'fcorte', desc: 'Base de ordens de corte e execuções. Alimenta o painel de Cortes.' }
 ];
 
 const ImportData = () => {
@@ -21,7 +22,7 @@ const ImportData = () => {
   const [errorParse, setErrorParse] = useState(null);
   const fileInputRefs = useRef({});
 
-  const [stats, setStats] = useState({ localidade: 0, arrecadacao: 0, meta_localidade: 0, meta_regional: 0 });
+  const [stats, setStats] = useState({ localidade: 0, arrecadacao: 0, meta_localidade: 0, meta_regional: 0, cortes: 0 });
 
   const fetchStats = async () => {
     try {
@@ -31,7 +32,8 @@ const ImportData = () => {
         localidade: data.localidade,
         arrecadacao: data.arrecadacao,
         meta_localidade: data.meta_localidade || 0,
-        meta_regional: data.meta_regional
+        meta_regional: data.meta_regional,
+        cortes: data.cortes || 0
       });
     } catch (err) {
       console.error("Error fetching project stats", err);
@@ -155,7 +157,7 @@ const ImportData = () => {
               </div>
             </div>
             <p className="text-[var(--text-muted)] font-medium mb-8">
-              Todos os dados de <strong className="text-[var(--text-main)]">Localidades, Arrecadação, Metas Regionais e Metas Locais</strong> serão apagados permanentemente.
+              Todos os dados de <strong className="text-[var(--text-main)]">Localidades, Arrecadação, Metas, e Cortes</strong> serão apagados permanentemente.
             </p>
             <div className="flex gap-3 justify-end">
               <button
