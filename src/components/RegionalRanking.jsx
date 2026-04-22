@@ -63,15 +63,18 @@ const RegionalRanking = ({ data }) => {
                </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" horizontal={false} opacity={0.5} />
-            <XAxis type="number" hide domain={[0, 'auto']} />
+            <XAxis type="number" hide domain={[0, 'dataMax + 20']} />
             <YAxis type="category" dataKey="name" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} width={120} />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--brand-500)', opacity: 0.05 }} />
             
-            <Bar dataKey="realizado" radius={[0, 6, 6, 0]} barSize={24}>
+            <Bar dataKey="porcentagem" radius={[0, 6, 6, 0]} barSize={24}>
                {chartData.map((entry, index) => (
                  <Cell key={`cell-${index}`} fill="url(#rankingGradient)" />
                ))}
+               <LabelList dataKey="porcentagem" content={<CustomizedLabel />} />
             </Bar>
+
+            <ReferenceLine x={100} stroke="var(--brand-500)" strokeDasharray="3 3" opacity={0.5} />
           </BarChart>
         </ResponsiveContainer>
       </div>

@@ -142,7 +142,9 @@ export const useDashboardData = (referencia, regional = 'TODAS') => {
            realizado: regionMap[name].realizado,
            previsto: regionMap[name].previsto,
            porcentagem: regionMap[name].previsto > 0 ? (regionMap[name].realizado / regionMap[name].previsto) * 100 : 0
-        })).sort((a, b) => b.realizado - a.realizado);
+        })).sort((a, b) => b.porcentagem - a.porcentagem);
+        
+        console.log('Ranking sorted:', regionalRanking.map(r => `${r.name}: ${r.porcentagem.toFixed(1)}%`));
 
         // ===== Annual Performance (FIX: was always empty) =====
         const annualRealizadoMap = {};
