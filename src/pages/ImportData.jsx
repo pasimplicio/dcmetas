@@ -1,0 +1,216 @@
+import { useState, useRef, useEffect } from 'react';
+import { UploadCloud, CheckCircle2, AlertCircle, RefreshCw, Trash2, Info } from 'lucide-react';
+import { parseCSV, aggregateData } from '../services/csvParser';
+
+const API_URL = 'http://localhost:3001/api';
+
+const config = [
+  { id: 'localidade', title: '1. Localidades (Dimensão)', fileMatch: 'dLocalidade', desc: 'Mapeamento de localidades e regionais. Essencial para o ranking.' },
+  { id: 'arrecadacao', title: '2. Arrecadação (Fato)', fileMatch: 'fArrecadacao', desc: 'Recebimentos diários. Alimenta as barras e cards de realizado. (Agrupado para performance)' },
+  { id: 'meta_regional', title: '3. Metas Regionais', fileMatch: 'fMetaArrecRegional', desc: 'Metas globais e por categoria. Base para as porcentagens de 2026.' },
+  { id: 'meta_localidade', title: '4. Metas Locais (Opcional)', fileMatch: 'fMetaArrecLocalidade', desc: 'Metas detalhadas por unidade. Atualmente desconsiderado no dashboard.' }
+];
+
+const ImportData = () => {
+  const [loading, setLoading] = useState(null);
+  const [loadingText, setLoadingText] = useState('');
+  const [progress, setProgress] = useState(0);
+  const [errorParse, setErrorParse] = useState(null);
+  const fileInputRefs = useRef({});
+
+  const [stats, setStats] = useState({ localidade: 0, arrecadacao: 0, meta_localidade: 0, meta_regional: 0 });
+
+  const fetchStats = async () => {
+    try {
+      const res = await fetch(`${API_URL}/stats`);
+      const data = await res.json();
+      setStats({
+        localidade: data.localidade,
+        arrecadacao: data.arrecadacao,
+        meta_localidade: data.meta_localidade || 0,
+        meta_regional: data.meta_regional
+      });
+    } catch (err) {
+      console.error("Error fetching project stats", err);
+    }
+  };
+
+  // Initial fetch
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const handleUploadClick = (id) => {
+    fileInputRefs.current[id].click();
+  };
+
+  const onFileChange = async (e, id) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setLoading(id);
+    setLoadingText('Lendo arquivo...');
+    setProgress(0);
+    setErrorParse(null);
+    
+    try {
+      // Parse CSV
+      let rows = await parseCSV(file, id, (prog) => {
+          const pct = Math.round((prog.loaded / prog.total) * 100);
+          setProgress(pct);
+      });
+      
+      console.log(`Parsed ${rows.length} rows for ${id}`);
+      if (rows.length === 0) {
+        throw new Error("O arquivo parece estar vazio ou com formato inválido.");
+      }
+
+      setLoadingText('Sincronizando Local...');
+      setProgress(0);
+
+      const response = await fetch(`${API_URL}/import`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: id, data: rows })
+      });
+
+      if (!response.ok) throw new Error('Falha ao gravar no banco local.');
+
+      await fetchStats();
+      setProgress(100);
+    } catch (err) {
+      console.error("Local Upload Error:", err);
+      setErrorParse(`Erro ao processar: ${err.message}`);
+    } finally {
+      setTimeout(() => {
+        setLoading(null);
+        setLoadingText('');
+        setProgress(0);
+      }, 1000);
+      e.target.value = '';
+    }
+  };
+
+  const handleClearAll = async () => {
+      if(!window.confirm("Deseja apagar todos os dados do BANCO LOCAL?")) return;
+      setLoading('clear');
+      setLoadingText('Limpando...');
+      setErrorParse(null);
+      
+      try {
+          const res = await fetch(`${API_URL}/clear`, { method: 'POST' });
+          if (!res.ok) throw new Error('Falha ao limpar banco.');
+          await fetchStats();
+      } catch (err) {
+          console.error("Clear Error:", err);
+          setErrorParse(`Erro ao limpar: ${err.message}`);
+      } finally {
+          setLoading(null);
+          setLoadingText('');
+      }
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-8 glass-panel border border-[var(--border-color)] gap-6">
+        <div>
+          <h2 className="text-3xl font-black heading-text text-[var(--text-main)] tracking-tight">Gestão da Base de Dados</h2>
+          <p className="text-[var(--text-muted)] mt-2 max-w-xl font-medium">Importe as planilhas CSV extraídas do sistema para atualizar os indicadores do dashboard.</p>
+          <div className="mt-4 flex items-center gap-2 text-xs text-brand-500 font-bold uppercase tracking-widest bg-brand-500/10 w-fit px-3 py-1 rounded-full">
+             <Info size={14}/>
+             Importe "Localidades" primeiro para garantir a integridade.
+          </div>
+        </div>
+        <button 
+          onClick={handleClearAll} 
+          disabled={loading === 'clear'}
+          className="group flex items-center gap-2 px-6 py-3 bg-red-50 dark:bg-red-500/10 text-red-600 border border-red-200 dark:border-red-500/20 rounded-2xl hover:bg-red-600 hover:text-white transition-all font-bold disabled:opacity-50"
+        >
+           {loading === 'clear' ? <RefreshCw className="animate-spin" size={18} /> : <Trash2 size={18} className="group-hover:animate-bounce" />}
+           {loading === 'clear' ? 'Limpando...' : 'Limpar Tudo'}
+        </button>
+      </div>
+
+      {errorParse && (
+        <div className="p-6 bg-red-500/10 border-2 border-red-500/20 rounded-2xl flex items-center gap-4 text-red-600 dark:text-red-400 font-bold">
+           <AlertCircle size={24} />
+           {errorParse}
+        </div>
+      )}
+
+      <div className="grid md:grid-cols-2 gap-6">
+        {config.map(({ id, title, fileMatch, desc }) => {
+          const count = stats ? stats[id] : 0;
+          const isLoading = loading === id;
+          const isDone = count > 0;
+
+          return (
+            <div key={id} className={`glass-panel p-8 flex flex-col border-2 transition-all duration-300 ${isDone ? 'border-brand-500/30' : 'border-transparent'} card-hover`}>
+              <div className="flex justify-between items-start mb-6">
+                <div className="space-y-1">
+                  <h3 className="text-xl font-black text-[var(--text-main)] heading-text tracking-tight">{title}</h3>
+                  <p className="text-sm text-[var(--text-muted)] font-medium leading-relaxed">{desc}</p>
+                </div>
+                {isDone ? (
+                    <div className="flex items-center justify-center bg-emerald-500/10 text-emerald-500 p-3 rounded-2xl ring-1 ring-emerald-500/20">
+                        <CheckCircle2 size={24} />
+                    </div>
+                ) : (
+                    <div className="flex items-center justify-center bg-[var(--bg-main)] text-[var(--text-muted)] p-3 rounded-2xl ring-1 ring-[var(--border-color)]">
+                        <UploadCloud size={24} />
+                    </div>
+                )}
+              </div>
+              
+              <div className="mt-auto pt-6 flex flex-col gap-4">
+                <input 
+                  type="file" 
+                  accept=".csv"
+                  className="hidden"
+                  onChange={(e) => onFileChange(e, id)}
+                  ref={(el) => fileInputRefs.current[id] = el}
+                />
+                
+                <div className="flex items-center justify-between">
+                    <div className="text-sm font-bold uppercase tracking-wider">
+                       {isLoading ? (
+                           <span className="text-brand-500 animate-pulse flex items-center gap-2">
+                              <RefreshCw className="animate-spin" size={16} /> {loadingText} {progress}%
+                           </span>
+                       ) : isDone ? (
+                           <span className="text-[var(--text-main)]">
+                               {count.toLocaleString('pt-BR')} <span className="text-[var(--text-muted)] font-medium">registros</span>
+                           </span>
+                       ) : (
+                           <span className="text-[var(--text-muted)] italic">Aguardando arquivo</span>
+                       )}
+                    </div>
+
+                    <button 
+                      onClick={() => handleUploadClick(id)}
+                      disabled={isLoading}
+                      className={`px-6 py-2.5 rounded-xl font-black transition-all disabled:opacity-50 ${
+                        isDone 
+                        ? 'bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-main)] hover:bg-brand-50 dark:hover:bg-slate-800' 
+                        : 'bg-brand-500 text-white shadow-lg shadow-brand-500/20 hover:bg-brand-600'
+                      }`}
+                    >
+                      {isDone ? 'Atualizar' : 'Importar CSV'}
+                    </button>
+                </div>
+
+                {isLoading && (
+                  <div className="w-full bg-[var(--bg-main)] h-2 rounded-full overflow-hidden ring-1 ring-[var(--border-color)]">
+                      <div className="bg-brand-500 h-full transition-all duration-300 shadow-[0_0_8px_rgba(14,165,233,0.5)]" style={{ width: `${progress}%` }}></div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+export default ImportData;
