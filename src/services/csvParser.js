@@ -236,6 +236,32 @@ const transformData = (data, type, startIdx = 0) => {
             motivoEncerramento: row['motivo encerramento'] || row['Motivo Encerramento']
           };
       });
+    case 'os':
+      return data.map(row => {
+          const dtGeracao = row['DATA GERACAO'] || row['Data Geracao'] || '';
+          let dataGeracao = dtGeracao;
+          if (dtGeracao && dtGeracao.includes('/')) {
+              const parts = dtGeracao.split('/');
+              if (parts.length === 3) {
+                  dataGeracao = `${parts[2].substring(0, 4)}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+              }
+          }
+
+          return {
+            nr_os: row['NR OS'] || row['nr os'],
+            tipo_servico: row['TIPO SERVICO'] || row['tipo servico'],
+            situacao_os: (row['SITUACAO OS'] || row['situacao os'] || '').toUpperCase(),
+            responsavel: row['RESPONSAVEL'] || row['responsavel'],
+            data_geracao: dataGeracao,
+            dias_pendente: parseInt(row['DIAS PENDENTE'] || row['dias pendente'] || 0),
+            data_encerramento: row['DATA ENCERRAMENTO'] || row['data encerramento'],
+            localidade_id: parseInt(row['LOCALIDADE'] || row['localidade'] || 0),
+            data_programada: row['DATA PROGRAMADA'] || row['data programada'],
+            equipe_programada: row['EQUIPE PROGRAMADA'] || row['equipe programada'],
+            setor_atual: row['SETOR ATUAL O.S.'] || row['setor atual'],
+            valor_cobranca: parseMonetary(row['VALOR COBRANCA'] || row['valor cobranca'])
+          };
+      });
     default:
       return [];
   }
