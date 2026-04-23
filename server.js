@@ -666,8 +666,18 @@ app.get('/api/os/pendentes', (req, res) => {
             };
         }
 
+        // 7. Tempo Médio (Dias)
+        const avgResult = db.prepare(`
+            SELECT AVG(os.dias_pendente) as avgDays
+            FROM ordens_servico os
+            LEFT JOIN localidades l ON os.localidade_id = l.id
+            ${whereClause}
+        `).get(...params);
+        const tempoMedio = avgResult.avgDays || 0;
+
         res.json({
             totalPendentes,
+            tempoMedio,
             dailyData,
             topSetores,
             topServicos,

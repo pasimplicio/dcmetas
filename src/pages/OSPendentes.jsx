@@ -7,7 +7,8 @@ import {
   Download,
   Clock,
   LayoutGrid,
-  Building2
+  Building2,
+  Calendar
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -90,16 +91,38 @@ const OSPendentes = () => {
       {/* Header & Stats & Controls */}
       <div className="flex flex-col xl:flex-row items-center justify-between gap-4">
         
-        {/* KPI Card */}
-        <div className="glass-panel px-8 py-4 flex items-center gap-6 border-l-4 border-brand-500 min-w-[300px]">
-          <div className="p-3 bg-brand-500/10 dark:bg-brand-500/20 rounded-2xl text-brand-500">
-            <Clock size={28} />
+        <div className="flex items-center gap-4">
+          {/* KPI Card 1: Total */}
+          <div className="glass-panel px-8 py-4 flex items-center gap-6 border-l-4 border-brand-500 min-w-[280px]">
+            <div className="p-3 bg-brand-500/10 dark:bg-brand-500/20 rounded-2xl text-brand-500">
+              <Clock size={28} />
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)]">Total de O.S. Pendente</p>
+              <h2 className="text-4xl font-black text-[var(--text-main)] tabular-nums leading-none">
+                {data?.totalPendentes.toLocaleString('pt-BR')}
+              </h2>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)]">Total de O.S. Pendente</p>
-            <h2 className="text-4xl font-black text-[var(--text-main)] tabular-nums">
-              {data?.totalPendentes.toLocaleString('pt-BR')}
-            </h2>
+
+          {/* KPI Card 2: Tempo Médio */}
+          <div className="glass-panel px-8 py-4 flex items-center gap-6 border-l-4 border-amber-500 min-w-[280px]">
+            <div className="p-3 bg-amber-500/10 dark:bg-amber-500/20 rounded-2xl text-amber-500">
+              <Calendar size={28} />
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)]">Tempo Médio Pendência</p>
+              <div className="flex items-baseline gap-1">
+                <h2 className="text-3xl font-black text-[var(--text-main)] tabular-nums leading-none">
+                  {Math.floor(data?.tempoMedio || 0)}
+                </h2>
+                <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-tighter mr-2">dias</span>
+                <h2 className="text-3xl font-black text-[var(--text-main)] tabular-nums leading-none">
+                  {Math.round(((data?.tempoMedio || 0) % 1) * 24)}
+                </h2>
+                <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-tighter">hrs</span>
+              </div>
+            </div>
           </div>
         </div>
 
