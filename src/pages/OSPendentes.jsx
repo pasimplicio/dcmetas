@@ -135,9 +135,9 @@ const OSPendentes = () => {
       {/* Header & Stats & Controls */}
       <div className="flex flex-col xl:flex-row items-center justify-between gap-4">
         
-        <div className="flex items-center gap-4 w-full xl:w-auto overflow-x-auto pb-2 xl:pb-0 hide-scrollbar">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full xl:flex-1">
           {/* KPI Card 1: Total */}
-          <div className="glass-panel px-8 py-4 flex items-center gap-6 border-l-4 border-brand-500 min-w-[280px] group hover:border-brand-400 transition-colors">
+          <div className="glass-panel px-6 py-4 flex items-center gap-6 border-l-4 border-brand-500 group hover:border-brand-400 transition-colors">
             <div className="p-3 bg-brand-500/10 dark:bg-brand-500/20 rounded-2xl text-brand-500 group-hover:scale-110 transition-transform">
               <Clock size={28} />
             </div>
@@ -150,7 +150,7 @@ const OSPendentes = () => {
           </div>
 
           {/* KPI Card 2: Tempo Médio */}
-          <div className="glass-panel px-8 py-4 flex items-center gap-6 border-l-4 border-amber-500 min-w-[280px] group hover:border-amber-400 transition-colors">
+          <div className="glass-panel px-6 py-4 flex items-center gap-6 border-l-4 border-amber-500 group hover:border-amber-400 transition-colors">
             <div className="p-3 bg-amber-500/10 dark:bg-amber-500/20 rounded-2xl text-amber-500 group-hover:scale-110 transition-transform">
               <CalendarDays size={28} />
             </div>
@@ -158,19 +158,15 @@ const OSPendentes = () => {
               <p className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)]">Tempo Médio Pendência</p>
               <div className="flex items-baseline gap-1 mt-1">
                 <h2 className="text-3xl font-black text-[var(--text-main)] tabular-nums leading-none">
-                  {Math.floor(data?.tempoMedio || 0)}
+                  {Math.round(data?.tempoMedio || 0)}
                 </h2>
-                <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-tighter mr-2">dias</span>
-                <h2 className="text-3xl font-black text-[var(--text-main)] tabular-nums leading-none">
-                  {Math.round(((data?.tempoMedio || 0) % 1) * 24)}
-                </h2>
-                <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-tighter">hrs</span>
+                <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-tighter">dias</span>
               </div>
             </div>
           </div>
 
           {/* KPI Card 3: Alerta Cortes */}
-          <div className="glass-panel px-8 py-4 flex items-center gap-6 border-l-4 border-rose-500 min-w-[280px] group hover:border-rose-400 transition-colors">
+          <div className="glass-panel px-6 py-4 flex items-center gap-6 border-l-4 border-rose-500 group hover:border-rose-400 transition-colors">
             <div className="p-3 bg-rose-500/10 dark:bg-rose-500/20 rounded-2xl text-rose-500 animate-pulse group-hover:animate-none group-hover:scale-110 transition-transform">
               <AlertCircle size={28} />
             </div>

@@ -90,7 +90,8 @@ db.exec(`
     data_programada TEXT,
     equipe_programada TEXT,
     setor_atual TEXT,
-    valor_cobranca REAL
+    valor_cobranca REAL,
+    motivo_encerramento TEXT
   );
 
   CREATE TABLE IF NOT EXISTS faturamento (

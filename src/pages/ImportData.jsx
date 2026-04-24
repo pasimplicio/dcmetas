@@ -20,6 +20,11 @@ const ImportData = () => {
   const [loading, setLoading] = useState(null);
   const [loadingText, setLoadingText] = useState('');
   const [confirmClear, setConfirmClear] = useState(false);
+  const [confirmClearTable, setConfirmClearTable] = useState(null); // stores the id of the table to clear
+  const [clearOnImport, setClearOnImport] = useState({
+    localidade: true, arrecadacao: true, meta_localidade: true, meta_regional: true, 
+    cortes: true, os: true, faturamento: true, pagamentos: true 
+  });
   const [progress, setProgress] = useState(0);
   const [errorParse, setErrorParse] = useState(null);
   const fileInputRefs = useRef({});
@@ -53,6 +58,10 @@ const ImportData = () => {
     fileInputRefs.current[id].click();
   };
 
+  const toggleClearOnImport = (id) => {
+    setClearOnImport(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
 
   const onFileChange = async (e, id) => {
     const file = e.target.files[0];
@@ -64,6 +73,7 @@ const ImportData = () => {
     setErrorParse(null);
     
     const BATCH = 50000;
+    const shouldClear = clearOnImport[id];
 
     try {
       // Phase 1: Parse CSV (0-40%)
@@ -83,7 +93,8 @@ const ImportData = () => {
       
       for (let i = 0; i < totalBatches; i++) {
         const batch = rows.slice(i * BATCH, (i + 1) * BATCH);
-        const isFirst = i === 0;
+        // Clear first batch only if shouldClear is true
+        const isFirst = i === 0 && shouldClear;
         
         setLoadingText(`Gravando ${((i + 1) * BATCH > rows.length ? rows.length : (i + 1) * BATCH).toLocaleString('pt-BR')} / ${rows.length.toLocaleString('pt-BR')}`);
         await api.post('/import', { type: id, data: batch, clearFirst: isFirst });
@@ -110,6 +121,25 @@ const ImportData = () => {
     }
   };
 
+  const executeClearTable = async (id) => {
+      setConfirmClearTable(null);
+      setLoading(id);
+      setLoadingText('Limpando tabela...');
+      setErrorParse(null);
+      
+      try {
+          await api.post('/clear-table', { type: id });
+          // Ensure stats are fresh
+          await fetchStats();
+      } catch (err) {
+          console.error("Clear Table Error:", err);
+          setErrorParse(`Erro ao limpar tabela: ${err.message}`);
+      } finally {
+          setLoading(null);
+          setLoadingText('');
+      }
+  };
+
   const executeClear = async () => {
       setConfirmClear(false);
       setLoading('clear');
@@ -131,36 +161,51 @@ const ImportData = () => {
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500">
 
-      {/* Modal de Confirmação */}
+      {/* Modal de Confirmação - Limpar Tudo */}
       {confirmClear && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center" onClick={() => setConfirmClear(false)}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => setConfirmClear(false)}>
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-          <div className="relative glass-panel border border-[var(--border-color)] p-8 rounded-3xl shadow-2xl max-w-md w-full mx-4 animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+          <div className="relative glass-panel border border-[var(--border-color)] p-8 rounded-3xl shadow-2xl max-w-md w-full animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-4 mb-6">
               <div className="p-3 bg-red-500/10 rounded-2xl">
                 <Trash2 size={28} className="text-red-500" />
               </div>
               <div>
-                <h3 className="text-xl font-black text-[var(--text-main)]">Limpar Base de Dados</h3>
-                <p className="text-sm text-[var(--text-muted)] mt-1">Esta ação não pode ser desfeita.</p>
+                <h3 className="text-xl font-black text-[var(--text-main)]">Limpar Tudo</h3>
+                <p className="text-sm text-[var(--text-muted)] mt-1">Esta ação apagará toda a base.</p>
               </div>
             </div>
             <p className="text-[var(--text-muted)] font-medium mb-8">
-              Todos os dados de <strong className="text-[var(--text-main)]">Localidades, Arrecadação, Metas, e Cortes</strong> serão apagados permanentemente.
+              Todos os dados de todas as tabelas serão removidos permanentemente. Deseja prosseguir?
             </p>
             <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setConfirmClear(false)}
-                className="px-6 py-2.5 rounded-xl font-bold text-[var(--text-muted)] bg-[var(--bg-surface)] border border-[var(--border-color)] hover:bg-[var(--bg-main)] transition-all"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={executeClear}
-                className="px-6 py-2.5 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/20 transition-all"
-              >
-                Sim, Limpar Tudo
-              </button>
+              <button onClick={() => setConfirmClear(false)} className="px-6 py-2.5 rounded-xl font-bold text-[var(--text-muted)] hover:bg-[var(--bg-main)] transition-all">Cancelar</button>
+              <button onClick={executeClear} className="px-6 py-2.5 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/20 transition-all">Limpar Tudo</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmação - Limpar Tabela Única */}
+      {confirmClearTable && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => setConfirmClearTable(null)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative glass-panel border border-[var(--border-color)] p-8 rounded-3xl shadow-2xl max-w-md w-full animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-4 mb-6">
+              <div className="p-3 bg-rose-500/10 rounded-2xl">
+                <Trash2 size={28} className="text-rose-500" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-[var(--text-main)]">Limpar Tabela</h3>
+                <p className="text-sm text-[var(--text-muted)] mt-1">{config.find(c => c.id === confirmClearTable)?.title}</p>
+              </div>
+            </div>
+            <p className="text-[var(--text-muted)] font-medium mb-8">
+              Deseja apagar permanentemente apenas os dados desta tabela? As outras tabelas permanecerão intactas.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setConfirmClearTable(null)} className="px-6 py-2.5 rounded-xl font-bold text-[var(--text-muted)] hover:bg-[var(--bg-main)] transition-all">Cancelar</button>
+              <button onClick={() => executeClearTable(confirmClearTable)} className="px-6 py-2.5 rounded-xl font-bold text-white bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-500/20 transition-all">Limpar Tabela</button>
             </div>
           </div>
         </div>
@@ -205,18 +250,30 @@ const ImportData = () => {
                   <h3 className="text-xl font-black text-[var(--text-main)] heading-text tracking-tight">{title}</h3>
                   <p className="text-sm text-[var(--text-muted)] font-medium leading-relaxed">{desc}</p>
                 </div>
-                <div className="relative">
-                  <div className={`flex items-center justify-center p-3 rounded-2xl ring-1 transition-all duration-500 ${
-                    isDone 
-                      ? 'bg-brand-500/10 text-brand-500 ring-brand-500/20' 
-                      : 'bg-[var(--bg-main)] text-[var(--text-muted)] ring-[var(--border-color)]'
-                  }`}>
-                    {config.find(c => c.id === id).icon}
-                  </div>
-                  {isDone && (
-                    <div className="absolute -top-2 -right-2 bg-emerald-500 text-white p-1 rounded-full shadow-lg border-2 border-[var(--bg-surface)] animate-in zoom-in duration-300">
-                      <CheckCircle2 size={12} />
+                <div className="flex flex-col gap-4">
+                  <div className="relative">
+                    <div className={`flex items-center justify-center p-3 rounded-2xl ring-1 transition-all duration-500 ${
+                      isDone 
+                        ? 'bg-brand-500/10 text-brand-500 ring-brand-500/20' 
+                        : 'bg-[var(--bg-main)] text-[var(--text-muted)] ring-[var(--border-color)]'
+                    }`}>
+                      {config.find(c => c.id === id).icon}
                     </div>
+                    {isDone && (
+                      <div className="absolute -top-2 -right-2 bg-emerald-500 text-white p-1 rounded-full shadow-lg border-2 border-[var(--bg-surface)] animate-in zoom-in duration-300">
+                        <CheckCircle2 size={12} />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {isDone && !isLoading && (
+                    <button 
+                      onClick={() => setConfirmClearTable(id)}
+                      title="Limpar apenas esta tabela"
+                      className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all self-end"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   )}
                 </div>
               </div>
@@ -230,32 +287,50 @@ const ImportData = () => {
                   ref={(el) => fileInputRefs.current[id] = el}
                 />
                 
-                <div className="flex items-center justify-between">
-                    <div className="text-sm font-bold uppercase tracking-wider">
-                       {isLoading ? (
-                           <span className="text-brand-500 animate-pulse flex items-center gap-2">
-                              <RefreshCw className="animate-spin" size={16} /> {loadingText} {progress}%
-                           </span>
-                       ) : isDone ? (
-                           <span className="text-[var(--text-main)]">
-                               {count.toLocaleString('pt-BR')} <span className="text-[var(--text-muted)] font-medium">registros</span>
-                           </span>
-                       ) : (
-                           <span className="text-[var(--text-muted)] italic">Aguardando arquivo</span>
-                       )}
+                <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                        <div className="text-sm font-bold uppercase tracking-wider">
+                           {isLoading ? (
+                               <span className="text-brand-500 animate-pulse flex items-center gap-2">
+                                  <RefreshCw className="animate-spin" size={16} /> {loadingText} {progress}%
+                               </span>
+                           ) : isDone ? (
+                               <span className="text-[var(--text-main)]">
+                                   {count.toLocaleString('pt-BR')} <span className="text-[var(--text-muted)] font-medium">registros</span>
+                               </span>
+                           ) : (
+                               <span className="text-[var(--text-muted)] italic">Aguardando arquivo</span>
+                           )}
+                        </div>
+
+                        <button 
+                          onClick={() => handleUploadClick(id)}
+                          disabled={isLoading}
+                          className={`px-6 py-2.5 rounded-xl font-black transition-all disabled:opacity-50 ${
+                            isDone 
+                            ? 'bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-main)] hover:bg-brand-50 dark:hover:bg-slate-800' 
+                            : 'bg-brand-500 text-white shadow-lg shadow-brand-500/20 hover:bg-brand-600'
+                          }`}
+                        >
+                          {isDone ? 'Atualizar' : 'Importar CSV'}
+                        </button>
                     </div>
 
-                    <button 
-                      onClick={() => handleUploadClick(id)}
-                      disabled={isLoading}
-                      className={`px-6 py-2.5 rounded-xl font-black transition-all disabled:opacity-50 ${
-                        isDone 
-                        ? 'bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-main)] hover:bg-brand-50 dark:hover:bg-slate-800' 
-                        : 'bg-brand-500 text-white shadow-lg shadow-brand-500/20 hover:bg-brand-600'
-                      }`}
-                    >
-                      {isDone ? 'Atualizar' : 'Importar CSV'}
-                    </button>
+                    {!isLoading && (
+                      <label className="flex items-center gap-2 cursor-pointer group w-fit">
+                        <div 
+                          onClick={() => toggleClearOnImport(id)}
+                          className={`w-4 h-4 rounded border transition-all flex items-center justify-center ${
+                            clearOnImport[id] ? 'bg-brand-500 border-brand-500' : 'border-[var(--border-color)]'
+                          }`}
+                        >
+                          {clearOnImport[id] && <CheckCircle2 size={10} className="text-white" />}
+                        </div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] group-hover:text-brand-500 transition-colors">
+                          Limpar antes de importar
+                        </span>
+                      </label>
+                    )}
                 </div>
 
                 {isLoading && (

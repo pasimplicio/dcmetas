@@ -122,7 +122,7 @@ const Sidebar = ({ isOpen, toggleSidebar, theme, toggleTheme }) => {
                   <div className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-40 opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}>
                     <div className="flex flex-col gap-1 pl-14 pr-4 border-l-2 border-brand-500/20 ml-8 py-1">
                       {item.subItems.map((sub, idx) => {
-                        const isSubDeveloped = sub.to.startsWith("/os/pendentes") || sub.to.startsWith("/arrecadacao");
+                        const isSubDeveloped = sub.to.startsWith("/os") || sub.to.startsWith("/arrecadacao");
                         
                         if (isSubDeveloped) {
                           return (
@@ -217,6 +217,7 @@ const Layout = () => {
   const location = useLocation();
 
   const getPageTitle = () => {
+    const ano = referencia.split('/')[1] || '2026';
     switch (location.pathname) {
       case '/':
       case '/arrecadacao/resumo':
@@ -229,6 +230,12 @@ const Layout = () => {
         return { title: 'Acompanhamento de Cortes', icon: <Scissors size={24} /> };
       case '/os/pendentes':
         return { title: 'Acompanhamento O.S. Pendentes', icon: <ClipboardCheck size={24} /> };
+      case '/os/encerradas':
+        return { 
+          title: 'Diretoria Comercial – Ordens de Serviço', 
+          subtitle: `Finalizar 80% das Ordens de Serviços Comerciais em até 72 horas em ${ano}`,
+          icon: <ClipboardCheck size={24} /> 
+        };
       case '/importar':
         return { title: 'Gestão da Base de Dados', icon: <Database size={24} /> };
       case '/configuracoes':
@@ -238,7 +245,7 @@ const Layout = () => {
     }
   };
 
-  const { title, icon } = getPageTitle();
+  const { title, subtitle, icon } = getPageTitle();
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -278,13 +285,18 @@ const Layout = () => {
               <div className="p-2 bg-brand-500/10 rounded-lg text-brand-500">
                 {icon}
               </div>
-              <h2 className="text-xl font-black text-[var(--text-main)] heading-text tracking-tight uppercase">{title}</h2>
+              <div className="flex flex-col">
+                 <h2 className="text-xl font-black text-[var(--text-main)] heading-text tracking-tight uppercase">{title}</h2>
+                 {subtitle && (
+                   <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mt-0.5">{subtitle}</p>
+                 )}
+              </div>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
             {/* OS Specific Filters */}
-            {location.pathname === '/os/pendentes' && (
+            {(location.pathname === '/os/pendentes' || location.pathname === '/os/encerradas') && (
               <>
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 ml-1">Responsável</span>
@@ -297,17 +309,19 @@ const Layout = () => {
                     {osOptions.responsaveis.map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 ml-1">Setor Atual</span>
-                  <select 
-                    value={osFilters.setor}
-                    onChange={(e) => setOsFilters(prev => ({ ...prev, setor: e.target.value }))}
-                    className="bg-[var(--bg-main)] border border-[var(--border-color)] rounded-xl px-3 py-2 text-xs font-bold text-[var(--text-main)] outline-none focus:ring-2 focus:ring-brand-500 min-w-[150px]"
-                  >
-                    <option value="">Todos os Setores</option>
-                    {osOptions.setores.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
+                {location.pathname === '/os/pendentes' && (
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 ml-1">Setor Atual</span>
+                    <select 
+                      value={osFilters.setor}
+                      onChange={(e) => setOsFilters(prev => ({ ...prev, setor: e.target.value }))}
+                      className="bg-[var(--bg-main)] border border-[var(--border-color)] rounded-xl px-3 py-2 text-xs font-bold text-[var(--text-main)] outline-none focus:ring-2 focus:ring-brand-500 min-w-[150px]"
+                    >
+                      <option value="">Todos os Setores</option>
+                      {osOptions.setores.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                )}
               </>
             )}
 

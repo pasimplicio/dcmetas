@@ -4,8 +4,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
-    const formatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-    const isAboveTarget = data.porcentagem >= 100;
+    const formatter = new Intl.NumberFormat('pt-BR');
+    const isAboveTarget = data.porcentagem >= 80; // Meta is 80% for OS
     
     return (
       <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] p-4 rounded-2xl shadow-2xl min-w-[220px] z-50 backdrop-blur-md">
@@ -15,7 +15,7 @@ const CustomTooltip = ({ active, payload }) => {
             {data.name}
           </p>
           <div className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${isAboveTarget ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
-            {data.porcentagem.toFixed(1)}% Atingido
+            {data.porcentagem.toFixed(1)}% SLA
           </div>
         </div>
         
@@ -29,7 +29,7 @@ const CustomTooltip = ({ active, payload }) => {
             
             <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-1.5">
-                    <Target size={10} className="text-slate-400"/> Meta
+                    <Target size={10} className="text-slate-400"/> Previsto (80%)
                 </span>
                 <span className="font-black text-sm text-[var(--text-muted)]">{formatter.format(data.previsto)}</span>
             </div>
@@ -49,8 +49,8 @@ const CustomizedLabel = (props) => {
   );
 };
 
-const RegionalRanking = ({ data }) => {
-  const chartData = data.slice(0, 10);
+const RegionalRanking = ({ data = [] }) => {
+  const chartData = (data || []).slice(0, 10);
 
   return (
     <div className="glass-panel p-6 flex flex-col h-full card-hover border border-[var(--border-color)] relative overflow-hidden">
@@ -73,7 +73,7 @@ const RegionalRanking = ({ data }) => {
             <defs>
                <linearGradient id="rankingPremiumGradient" x1="0" y1="0" x2="1" y2="0">
                  <stop offset="0%" stopColor="var(--brand-600)" stopOpacity={0.6} />
-                 <stop offset="50%" stopColor="var(--brand-500)" stopOpacity={0.8} />
+                 <stop offset="50%" stopColor="var(--brand-500)" strokeOpacity={0.8} />
                  <stop offset="100%" stopColor="var(--brand-400)" stopOpacity={1} />
                </linearGradient>
             </defs>

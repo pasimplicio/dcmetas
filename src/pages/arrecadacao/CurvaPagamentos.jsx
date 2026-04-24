@@ -80,9 +80,12 @@ const CurvaPagamentos = () => {
     );
   }
 
-  // Calculate Average Payment for Month 1
+  // Calculate Average Payment for Month 1 and Month 2
   const diasComPagamento = curva.filter(d => d.pagMes1 > 0).length || 1;
   const mediaDiariaMes1 = totalMes1 / diasComPagamento;
+  
+  const diasComPagamentoMes2 = curva.filter(d => d.pagMes2 > 0).length || 1;
+  const mediaDiariaMes2 = totalMes2 / diasComPagamentoMes2;
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -134,8 +137,8 @@ const CurvaPagamentos = () => {
         </div>
       </div>
 
-      {/* KPI Row - Adjusted to 5 columns */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      {/* KPI Row - Adjusted to 6 columns */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div className="glass-panel p-5 border border-brand-500/20 group hover:border-brand-500/50 transition-colors">
           <div className="flex items-center gap-2 text-brand-500 mb-2">
             <Activity size={16} />
@@ -177,6 +180,15 @@ const CurvaPagamentos = () => {
             <span className="text-[9px] font-black uppercase tracking-widest">Média {effectiveMes1}</span>
           </div>
           <h4 className="text-xl font-black heading-text text-[var(--text-main)]">{formatCurrency(mediaDiariaMes1)}</h4>
+        </div>
+
+        {/* New KPI: Média de Pagamento Mês 2 */}
+        <div className="glass-panel p-5 border border-[var(--border-color)] group hover:border-emerald-500/30 transition-colors">
+          <div className="flex items-center gap-2 text-[var(--text-muted)] mb-2 group-hover:text-emerald-500 transition-colors">
+            <Calculator size={16} />
+            <span className="text-[9px] font-black uppercase tracking-widest">Média {effectiveMes2}</span>
+          </div>
+          <h4 className="text-xl font-black heading-text text-[var(--text-main)]">{formatCurrency(mediaDiariaMes2)}</h4>
         </div>
       </div>
 

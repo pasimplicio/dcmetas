@@ -68,12 +68,12 @@ router.get('/comparativo', (req, res) => {
 
         const dados = db.prepare(`
             SELECT 
-                SUBSTR(p.referencia_pagamento, 1, 2) as mes,
-                SUBSTR(p.referencia_pagamento, 4, 4) as ano,
-                SUM(p.valor_pagamento) as total
-            FROM pagamentos p
-            JOIN localidades l ON p.localidade = l.id
-            WHERE (p.referencia_pagamento LIKE ? OR p.referencia_pagamento LIKE ?)
+                SUBSTR(a.mesPagamento, 1, 2) as mes,
+                SUBSTR(a.mesPagamento, 4, 4) as ano,
+                SUM(a.valorArrecadado) as total
+            FROM arrecadacao a
+            JOIN localidades l ON a.localidadeId = l.id
+            WHERE (a.mesPagamento LIKE ? OR a.mesPagamento LIKE ?)
             ${regFilter ? 'AND l.regional = ?' : ''}
             GROUP BY ano, mes
             ORDER BY ano, mes

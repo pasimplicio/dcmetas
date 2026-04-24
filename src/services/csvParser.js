@@ -254,7 +254,8 @@ const transformData = (data, type, startIdx = 0) => {
             data_programada: row['DATA PROGRAMADA'] || row['data programada'],
             equipe_programada: row['EQUIPE PROGRAMADA'] || row['equipe programada'],
             setor_atual: row['SETOR ATUAL O.S.'] || row['setor atual'],
-            valor_cobranca: parseMonetary(row['VALOR COBRANCA'] || row['valor cobranca'])
+            valor_cobranca: parseMonetary(row['VALOR COBRANCA'] || row['valor cobranca']),
+            motivo_encerramento: row['TIPO DE ENCERRAMENTO'] || row['tipo de encerramento'] || row['MOTIVO ENCERRAMENTO'] || row['motivo encerramento']
           };
       });
     case 'faturamento':

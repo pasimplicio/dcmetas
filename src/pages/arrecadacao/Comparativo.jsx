@@ -83,7 +83,7 @@ const Comparativo = () => {
             <div className="relative z-10">
                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-500 mb-2 block">Crescimento Anual</span>
                <h3 className="text-3xl font-black heading-text text-[var(--text-main)]">Análise {currentYear} vs {previousYear}</h3>
-               <p className="text-sm text-[var(--text-muted)] font-medium mt-2">Comparativo consolidado de arrecadação por mês de competência.</p>
+               <p className="text-sm text-[var(--text-muted)] font-medium mt-2">Comparativo consolidado de arrecadação por mês de pagamento.</p>
             </div>
          </div>
          <div className="glass-panel p-6 border border-emerald-500/20 flex flex-col justify-center relative overflow-hidden">

@@ -22,10 +22,26 @@ const stmts = {
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `),
   insertOS: db.prepare(`
-    INSERT OR REPLACE INTO ordens_servico (
+    INSERT INTO ordens_servico (
       nr_os, tipo_servico, situacao_os, responsavel, data_geracao, dias_pendente, 
-      data_encerramento, localidade_id, data_programada, equipe_programada, setor_atual, valor_cobranca
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      data_encerramento, localidade_id, data_programada, equipe_programada, setor_atual, valor_cobranca, motivo_encerramento
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(nr_os) DO UPDATE SET
+      tipo_servico = excluded.tipo_servico,
+      situacao_os = excluded.situacao_os,
+      responsavel = excluded.responsavel,
+      data_geracao = excluded.data_geracao,
+      dias_pendente = excluded.dias_pendente,
+      data_encerramento = excluded.data_encerramento,
+      localidade_id = excluded.localidade_id,
+      data_programada = excluded.data_programada,
+      equipe_programada = excluded.equipe_programada,
+      setor_atual = excluded.setor_atual,
+      valor_cobranca = excluded.valor_cobranca,
+      motivo_encerramento = excluded.motivo_encerramento
+    WHERE excluded.motivo_encerramento = 'CONCLUSAO DO SERVICO' 
+       OR ordens_servico.motivo_encerramento IS NULL 
+       OR ordens_servico.motivo_encerramento != 'CONCLUSAO DO SERVICO'
   `),
   insertFat: db.prepare(`
     INSERT INTO faturamento (
@@ -77,7 +93,7 @@ const insertOS = db.transaction((rows) => {
     stmts.insertOS.run(
       row.nr_os, row.tipo_servico, row.situacao_os, row.responsavel, row.data_geracao,
       row.dias_pendente, row.data_encerramento, row.localidade_id, row.data_programada,
-      row.equipe_programada, row.setor_atual, row.valor_cobranca
+      row.equipe_programada, row.setor_atual, row.valor_cobranca, row.motivo_encerramento
     );
   }
 });
@@ -130,6 +146,33 @@ router.post('/import', adminAuth, (req, res) => {
         res.json({ success: true });
     } catch (err) {
         console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.post('/clear-table', adminAuth, (req, res) => {
+    const { type } = req.body;
+    console.log(`POST /api/clear-table - Clearing table: ${type}`);
+    
+    const tables = {
+        localidade: 'localidades',
+        arrecadacao: 'arrecadacao',
+        meta_regional: 'metas_regional',
+        meta_localidade: 'metas_localidade',
+        cortes: 'cortes',
+        os: 'ordens_servico',
+        faturamento: 'faturamento',
+        pagamentos: 'pagamentos'
+    };
+
+    const tableName = tables[type];
+    if (!tableName) return res.status(400).json({ error: 'Tipo de tabela inválido' });
+
+    try {
+        db.prepare(`DELETE FROM ${tableName}`).run();
+        res.json({ success: true });
+    } catch (err) {
+        console.error("Error clearing table:", err);
         res.status(500).json({ error: err.message });
     }
 });

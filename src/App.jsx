@@ -6,6 +6,7 @@ import CurvaPagamentos from './pages/arrecadacao/CurvaPagamentos';
 import ImportData from './pages/ImportData';
 import Cortes from './pages/Cortes';
 import OSPendentes from './pages/OSPendentes';
+import OSEncerradas from './pages/OSEncerradas';
 import Configuracoes from './pages/Configuracoes';
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
           <Route path="arrecadacao/curva" element={<CurvaPagamentos />} />
           <Route path="cortes" element={<Cortes />} />
           <Route path="os/pendentes" element={<OSPendentes />} />
+          <Route path="os/encerradas" element={<OSEncerradas />} />
           <Route path="importar" element={<ImportData />} />
           <Route path="configuracoes" element={<Configuracoes />} />
         </Route>
