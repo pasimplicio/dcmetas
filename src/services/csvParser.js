@@ -262,6 +262,22 @@ const transformData = (data, type, startIdx = 0) => {
             valor_cobranca: parseMonetary(row['VALOR COBRANCA'] || row['valor cobranca'])
           };
       });
+    case 'faturamento':
+      return data.map(row => ({
+          localidade_id: parseInt(row['LOCALIDADE'] || row['Localidade'] || row['ID LOCALIDADE'] || row['CODIGO LOCALIDADE'] || 0),
+          referencia: normalizeRef(row['REFERENCIA'] || row['Referencia'] || row['REF'] || ''),
+          data_faturamento: row['DATA FATURAMENTO'] || row['Data Faturamento'] || row['DATA'] || '',
+          valor_faturado: parseMonetary(row['VALOR FATURADO'] || row['Valor Faturado'] || row['VALOR'] || 0)
+      }));
+    case 'pagamentos':
+      return data.map(row => ({
+          matricula: parseInt(row['MATRICULA'] || row['Matricula'] || row['ID_MATRICULA'] || 0),
+          localidade_id: parseInt(row['CODIGO LOCALIDADE'] || row['Localidade'] || row['LOCALIDADE'] || row['ID LOCALIDADE'] || 0),
+          numero_conta: row['NUMERO CONTA'] || row['Numero Conta'] || row['CONTA'] || '',
+          referencia_pagamento: normalizeRef(row['REFERENCIA PAGAMENTO'] || row['Referencia'] || row['REF_PAGAMENTO'] || row['REFERENCIA'] || ''),
+          data_pagamento: row['DATA PAGAMENTO'] || row['Data Pagamento'] || row['DATA'] || '',
+          valor_pagamento: parseMonetary(row['VALOR PAGAMENTO'] || row['Valor Pagamento'] || row['VALOR'] || 0)
+      }));
     default:
       return [];
   }

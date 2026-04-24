@@ -26,6 +26,16 @@ const stmts = {
       nr_os, tipo_servico, situacao_os, responsavel, data_geracao, dias_pendente, 
       data_encerramento, localidade_id, data_programada, equipe_programada, setor_atual, valor_cobranca
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `),
+  insertFat: db.prepare(`
+    INSERT INTO faturamento (
+      localidade_id, referencia, data_faturamento, valor_faturado
+    ) VALUES (?, ?, ?, ?)
+  `),
+  insertPag: db.prepare(`
+    INSERT INTO pagamentos (
+      matricula, localidade_id, numero_conta, referencia_pagamento, data_pagamento, valor_pagamento
+    ) VALUES (?, ?, ?, ?, ?, ?)
   `)
 };
 
@@ -72,6 +82,21 @@ const insertOS = db.transaction((rows) => {
   }
 });
 
+const insertFaturamento = db.transaction((rows) => {
+  for (const row of rows) {
+    stmts.insertFat.run(row.localidade_id, row.referencia, row.data_faturamento, row.valor_faturado);
+  }
+});
+
+const insertPagamentos = db.transaction((rows) => {
+  for (const row of rows) {
+    stmts.insertPag.run(
+      row.matricula, row.localidade_id, row.numero_conta, 
+      row.referencia_pagamento, row.data_pagamento, row.valor_pagamento
+    );
+  }
+});
+
 router.post('/import', adminAuth, (req, res) => {
     const { type, data, clearFirst } = req.body;
     console.log(`Receiving import for: ${type} (${data.length} rows, clearFirst: ${!!clearFirst})`);
@@ -95,6 +120,12 @@ router.post('/import', adminAuth, (req, res) => {
         } else if (type === 'os') {
             if (clearFirst) db.exec('DELETE FROM ordens_servico');
             insertOS(data);
+        } else if (type === 'faturamento') {
+            if (clearFirst) db.exec('DELETE FROM faturamento');
+            insertFaturamento(data);
+        } else if (type === 'pagamentos') {
+            if (clearFirst) db.exec('DELETE FROM pagamentos');
+            insertPagamentos(data);
         }
         res.json({ success: true });
     } catch (err) {
@@ -108,9 +139,11 @@ router.post('/clear', adminAuth, (req, res) => {
     try {
         db.prepare('DELETE FROM arrecadacao').run();
         db.prepare('DELETE FROM localidades').run();
-        db.prepare('DELETE FROM metas_regional').run();
         db.prepare('DELETE FROM metas_localidade').run();
         db.prepare('DELETE FROM cortes').run();
+        db.prepare('DELETE FROM ordens_servico').run();
+        db.prepare('DELETE FROM faturamento').run();
+        db.prepare('DELETE FROM pagamentos').run();
         
         console.log("Database cleared successfully");
         res.json({ success: true });

@@ -1,17 +1,19 @@
 import { useState, useRef, useEffect } from 'react';
-import { UploadCloud, CheckCircle2, AlertCircle, RefreshCw, Trash2, Info } from 'lucide-react';
+import { UploadCloud, CheckCircle2, AlertCircle, RefreshCw, Trash2, Info, Landmark, Banknote, Target, MapPin, Scissors, ClipboardCheck, Receipt, Coins } from 'lucide-react';
 import { parseCSV } from '../services/csvParser';
 import api from '../services/api.js';
 
 const BATCH_SIZE = 5000;
 
 const config = [
-  { id: 'localidade', title: '1. Localidades (Dimensão)', fileMatch: 'dLocalidade', desc: 'Mapeamento de localidades e regionais. Essencial para o ranking.' },
-  { id: 'arrecadacao', title: '2. Arrecadação (Fato)', fileMatch: 'fArrecadacao', desc: 'Recebimentos diários. Alimenta as barras e cards de realizado. (Agrupado para performance)' },
-  { id: 'meta_regional', title: '3. Metas Regionais', fileMatch: 'fMetaArrecRegional', desc: 'Metas globais e por categoria. Base para as porcentagens de 2026.' },
-  { id: 'meta_localidade', title: '4. Metas Locais (Opcional)', fileMatch: 'fMetaArrecLocalidade', desc: 'Metas detalhadas por unidade. Atualmente desconsiderado no dashboard.' },
-  { id: 'cortes', title: '5. Cortes (Fato)', fileMatch: 'fcorte', desc: 'Base de ordens de corte e execuções. Alimenta o painel de Cortes.' },
-  { id: 'os', title: '6. Ordens de Serviço (Fato)', fileMatch: 'fordemservico', desc: 'Base completa de OS. Alimenta o painel de Acompanhamento de OS Pendentes.' }
+  { id: 'localidade', title: '1. Localidades (Dimensão)', fileMatch: 'dLocalidade', desc: 'Mapeamento de localidades e regionais. Essencial para o ranking.', icon: <Landmark size={24} /> },
+  { id: 'arrecadacao', title: '2. Arrecadação (Fato)', fileMatch: 'fArrecadacao', desc: 'Recebimentos diários. Alimenta as barras e cards de realizado.', icon: <Banknote size={24} /> },
+  { id: 'meta_regional', title: '3. Metas Regionais', fileMatch: 'fMetaArrecRegional', desc: 'Metas globais e por categoria. Base para as porcentagens de 2026.', icon: <Target size={24} /> },
+  { id: 'meta_localidade', title: '4. Metas Locais (Opcional)', fileMatch: 'fMetaArrecLocalidade', desc: 'Metas detalhadas por unidade. Atualmente desconsiderado no dashboard.', icon: <MapPin size={24} /> },
+  { id: 'cortes', title: '5. Cortes (Fato)', fileMatch: 'fcorte', desc: 'Base de cortes e religações. Alimenta o painel de Acompanhamento de Cortes.', icon: <Scissors size={24} /> },
+  { id: 'os', title: '6. Ordens de Serviço (Fato)', fileMatch: 'fordemservico', desc: 'Base completa de OS. Alimenta o painel de Acompanhamento de OS Pendentes.', icon: <ClipboardCheck size={24} /> },
+  { id: 'faturamento', title: '7. Faturamento (Fato)', fileMatch: 'fFaturamento', desc: 'Base de faturamento mensal por localidade.', icon: <Receipt size={24} /> },
+  { id: 'pagamentos', title: '8. Pagamentos 2026 (Fato)', fileMatch: 'fPagamento_2026', desc: 'Base detalhada de pagamentos por matrícula.', icon: <Coins size={24} /> }
 ];
 
 const ImportData = () => {
@@ -22,7 +24,7 @@ const ImportData = () => {
   const [errorParse, setErrorParse] = useState(null);
   const fileInputRefs = useRef({});
 
-  const [stats, setStats] = useState({ localidade: 0, arrecadacao: 0, meta_localidade: 0, meta_regional: 0, cortes: 0, os: 0 });
+  const [stats, setStats] = useState({ localidade: 0, arrecadacao: 0, meta_localidade: 0, meta_regional: 0, cortes: 0, os: 0, faturamento: 0, pagamentos: 0 });
 
   const fetchStats = async () => {
     try {
@@ -33,7 +35,9 @@ const ImportData = () => {
         meta_localidade: data.meta_localidade || 0,
         meta_regional: data.meta_regional,
         cortes: data.cortes || 0,
-        os: data.os || 0
+        os: data.os || 0,
+        faturamento: data.faturamento || 0,
+        pagamentos: data.pagamentos || 0
       });
     } catch (err) {
       console.error("Error fetching project stats", err);
@@ -88,8 +92,9 @@ const ImportData = () => {
 
       await sendInBatches(id, rows, (batchPct) => {
         // 50-100% for uploading
-        setProgress(50 + Math.round(batchPct / 2));
-        setLoadingText(`Gravando... ${50 + Math.round(batchPct / 2)}%`);
+        const currentProgress = 50 + Math.round(batchPct / 2);
+        setProgress(currentProgress);
+        setLoadingText(`Gravando...`);
       });
 
       await fetchStats();
@@ -103,7 +108,7 @@ const ImportData = () => {
         setLoading(null);
         setLoadingText('');
         setProgress(0);
-      }, 1000);
+      }, 2000);
       e.target.value = '';
     }
   };
@@ -203,15 +208,20 @@ const ImportData = () => {
                   <h3 className="text-xl font-black text-[var(--text-main)] heading-text tracking-tight">{title}</h3>
                   <p className="text-sm text-[var(--text-muted)] font-medium leading-relaxed">{desc}</p>
                 </div>
-                {isDone ? (
-                    <div className="flex items-center justify-center bg-emerald-500/10 text-emerald-500 p-3 rounded-2xl ring-1 ring-emerald-500/20">
-                        <CheckCircle2 size={24} />
+                <div className="relative">
+                  <div className={`flex items-center justify-center p-3 rounded-2xl ring-1 transition-all duration-500 ${
+                    isDone 
+                      ? 'bg-brand-500/10 text-brand-500 ring-brand-500/20' 
+                      : 'bg-[var(--bg-main)] text-[var(--text-muted)] ring-[var(--border-color)]'
+                  }`}>
+                    {config.find(c => c.id === id).icon}
+                  </div>
+                  {isDone && (
+                    <div className="absolute -top-2 -right-2 bg-emerald-500 text-white p-1 rounded-full shadow-lg border-2 border-[var(--bg-surface)] animate-in zoom-in duration-300">
+                      <CheckCircle2 size={12} />
                     </div>
-                ) : (
-                    <div className="flex items-center justify-center bg-[var(--bg-main)] text-[var(--text-muted)] p-3 rounded-2xl ring-1 ring-[var(--border-color)]">
-                        <UploadCloud size={24} />
-                    </div>
-                )}
+                  )}
+                </div>
               </div>
               
               <div className="mt-auto pt-6 flex flex-col gap-4">

@@ -22,6 +22,8 @@ export const useDashboardData = (referencia, regional = 'TODAS') => {
     perfilDistribution: [],
     formaDistribution: [],
     table: [],
+    tableMonths: [],
+    check: { faturamento: 0, pagamentos: 0 },
     loading: true
   });
 
@@ -36,7 +38,8 @@ export const useDashboardData = (referencia, regional = 'TODAS') => {
         // Fetch unified dashboard data from Local Backend with Regional filter
         const { 
           arrecadacaoMes, metasRegMes, metasLocMes, localidades, 
-          yearData, yearMetas, municipioMatrix
+          yearData, yearMetas, municipioMatrix,
+          totalFaturamento, totalPagamentos
         } = await api.get('/dashboard', { referencia, regional });
 
         // ===== KPIs calculation =====
@@ -221,7 +224,9 @@ export const useDashboardData = (referencia, regional = 'TODAS') => {
         setData({ 
           kpis, daily, annual, regional: regionalRanking, 
           bancoRanking, perfilDistribution, formaDistribution,
-          table, tableMonths, loading: false 
+          table, tableMonths, 
+          check: { faturamento: totalFaturamento, pagamentos: totalPagamentos },
+          loading: false 
         });
       } catch (err) {
         console.error("Dashboard local fetch error", err);

@@ -10,13 +10,18 @@ router.get('/stats', (req, res) => {
     const metLocCount = db.prepare('SELECT count(*) as count FROM metas_localidade').get().count;
     const cortesCount = db.prepare('SELECT count(*) as count FROM cortes').get().count;
     const osCount = db.prepare('SELECT count(*) as count FROM ordens_servico').get().count;
+    const fatCount = db.prepare('SELECT count(*) as count FROM faturamento').get().count;
+    const pagCount = db.prepare('SELECT count(*) as count FROM pagamentos').get().count;
+
     res.json({ 
       localidade: locCount, 
       arrecadacao: arrCount, 
       meta_regional: metCount, 
       meta_localidade: metLocCount, 
       cortes: cortesCount,
-      os: osCount
+      os: osCount,
+      faturamento: fatCount,
+      pagamentos: pagCount
     });
 });
 

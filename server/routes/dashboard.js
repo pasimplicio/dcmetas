@@ -80,6 +80,22 @@ router.get('/dashboard', (req, res) => {
             ORDER BY l.municipio
         `).all(`%/${year}`, ...(regional ? [regional] : []));
 
+        // 6. Faturamento Total do Mês (Visual Check)
+        const totalFaturamento = db.prepare(`
+            SELECT SUM(f.valor_faturado) as total
+            FROM faturamento f
+            JOIN localidades l ON f.localidade_id = l.id
+            WHERE f.referencia = ? ${regFilter}
+        `).get(referencia, ...(regional ? [regional] : []))?.total || 0;
+
+        // 7. Pagamentos Detalhados do Mês (Visual Check)
+        const totalPagamentos = db.prepare(`
+            SELECT SUM(p.valor_pagamento) as total
+            FROM pagamentos p
+            JOIN localidades l ON p.localidade_id = l.id
+            WHERE p.referencia_pagamento = ? ${regFilter}
+        `).get(referencia, ...(regional ? [regional] : []))?.total || 0;
+
         res.json({
             arrecadacaoMes,
             metasRegMes,
@@ -87,7 +103,9 @@ router.get('/dashboard', (req, res) => {
             localidades,
             yearData,
             yearMetas,
-            municipioMatrix
+            municipioMatrix,
+            totalFaturamento,
+            totalPagamentos
         });
     } catch (err) {
         console.error(err);
