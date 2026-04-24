@@ -1,11 +1,94 @@
 import { useOutletContext, NavLink } from 'react-router-dom';
-import { Database, Sparkles, AlertCircle } from 'lucide-react';
-import KpiCard from '../components/KpiCard';
+import { Database, Sparkles, AlertCircle, Calendar, Target, TrendingUp } from 'lucide-react';
+import GaugeChart from '../components/GaugeChart';
 import { useCortesData } from '../hooks/useCortesData';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const formatterMoney = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const formatterNumber = new Intl.NumberFormat('pt-BR');
+
+const OldKpiCard = ({ title, data, isCurrency = true }) => {
+  const { realizado = 0, previsto = 0 } = data;
+  const porcentagem = previsto > 0 ? (realizado / previsto) * 100 : 0;
+  
+  const format = (val) => isCurrency ? formatterMoney.format(val) : formatterNumber.format(val);
+
+  return (
+    <div className="bg-[var(--bg-surface)] dark:bg-slate-900/40 p-6 flex flex-col items-center rounded-3xl border border-[var(--border-color)] dark:border-brand-500/20 shadow-xl shadow-brand-500/5 transition-all card-hover group">
+      
+      <div className="w-full text-center mb-5">
+        <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 heading-text uppercase tracking-[0.1em]">{title}</h3>
+      </div>
+      
+      <div className="mb-6 drop-shadow-md transform group-hover:scale-105 transition-transform duration-500">
+        <GaugeChart percent={porcentagem} size={160} strokeWidth={24} />
+      </div>
+      
+      <div className="w-full flex flex-col items-center gap-3 mt-auto">
+          <div className="flex flex-col items-center">
+             <div className="flex items-center gap-1.5 text-brand-600 dark:text-brand-400">
+                <TrendingUp size={14} />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Realizado</span>
+             </div>
+             <span className="text-xl font-black heading-text text-slate-800 dark:text-white tabular-nums leading-none mt-1">
+               {format(realizado)}
+             </span>
+          </div>
+
+          <div className="w-12 h-[1px] bg-slate-200 dark:bg-slate-800 my-1"></div>
+
+          <div className="flex flex-col items-center opacity-70">
+             <div className="flex items-center gap-1.5 text-slate-500">
+                <Target size={14} />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Previsto</span>
+             </div>
+             <span className="text-sm font-bold text-slate-600 dark:text-slate-400 tabular-nums leading-none mt-1">
+               {format(previsto)}
+             </span>
+          </div>
+      </div>
+    </div>
+  );
+};
+
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    const dataEmitido = payload.find(p => p.dataKey === 'emitido')?.value || 0;
+    const dataExecutado = payload.find(p => p.dataKey === 'executado')?.value || 0;
+    const pct = dataEmitido > 0 ? (dataExecutado / dataEmitido) * 100 : 0;
+    
+    return (
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] p-4 rounded-2xl shadow-2xl min-w-[220px] z-50 backdrop-blur-md">
+        <div className="flex justify-between items-center border-b border-[var(--border-color)] pb-3 mb-3">
+          <p className="font-black text-[var(--text-muted)] uppercase tracking-widest text-[10px] flex items-center gap-1.5">
+            <Calendar size={12} className="text-brand-500" />
+            Data: {label ? label.split('-').reverse().join('/') : ''}
+          </p>
+          <div className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-brand-500/10 text-brand-500">
+            {pct.toFixed(1)}% Exec
+          </div>
+        </div>
+        
+        <div className="space-y-3">
+            <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-slate-400"></div> Emitido
+                </span>
+                <span className="font-black text-lg text-[var(--text-main)]">{formatterNumber.format(dataEmitido)}</span>
+            </div>
+            
+            <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-bold text-brand-500 uppercase tracking-widest flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-brand-500"></div> Executado
+                </span>
+                <span className="font-black text-xl text-brand-500">{formatterNumber.format(dataExecutado)}</span>
+            </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
 
 const Cortes = () => {
   const { referencia, regional: selectedRegional } = useOutletContext();
@@ -57,25 +140,25 @@ const Cortes = () => {
   }
 
   return (
-    <div className="flex flex-col gap-8 w-full pb-10">
+    <div className="flex flex-col gap-8 w-full pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
       {/* KPI Cards Row */}
       <div className="glass-panel p-4 md:p-6 mb-2">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-           <KpiCard 
+           <OldKpiCard 
              title="% Corte" 
              data={{ realizado: metrics.totalCorte, previsto: metrics.totalEmissao }} 
              isCurrency={false}
            />
-           <KpiCard 
+           <OldKpiCard 
              title="% Recebido Antes" 
              data={{ realizado: metrics.valorPagoAntes, previsto: metrics.valorCobrado }} 
            />
-           <KpiCard 
+           <OldKpiCard 
              title="% Recebido Pós Corte" 
              data={{ realizado: metrics.valorPagoApos, previsto: metrics.valorCobradoCortado }} 
            />
-           <KpiCard 
+           <OldKpiCard 
              title="% Recebido Total" 
              data={{ realizado: metrics.valorPago, previsto: metrics.valorCobrado }} 
            />
@@ -83,58 +166,80 @@ const Cortes = () => {
       </div>
 
       {/* Main Chart */}
-      <div className="glass-panel p-6 border border-[var(--border-color)] min-h-[400px]">
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="glass-panel p-6 border border-[var(--border-color)] min-h-[400px] relative overflow-hidden">
+        <div className="absolute -top-24 -left-24 w-64 h-64 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
             <div>
                <h3 className="text-lg font-black heading-text text-[var(--text-main)] uppercase tracking-tight">Evolução Diária</h3>
                <p className="text-sm font-medium text-[var(--text-muted)]">Comparativo entre Ordens Emitidas e Cortes Executados.</p>
             </div>
-            <div className="flex gap-4">
+            <div className="flex items-center gap-6 bg-[var(--bg-main)] px-4 py-2 rounded-xl border border-[var(--border-color)]">
                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-700"></div>
-                  <span className="text-xs font-bold text-[var(--text-muted)] uppercase">Emitido</span>
+                  <div className="w-3 h-3 rounded-full bg-slate-400"></div>
+                  <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider">Emitido</span>
                </div>
                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-brand-500"></div>
-                  <span className="text-xs font-bold text-[var(--text-muted)] uppercase">Executado</span>
+                  <div className="w-3 h-3 rounded-full bg-brand-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                  <span className="text-[10px] font-black text-[var(--text-main)] uppercase tracking-wider">Executado</span>
                </div>
             </div>
         </div>
 
-        <div className="h-[320px] w-full">
+        <div className="h-[320px] w-full relative z-10">
             <ResponsiveContainer width="100%" height="100%">
                <AreaChart data={dailyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                  <defs>
-                   <linearGradient id="colorEmitido" x1="0" y1="0" x2="0" y2="1">
+                   <linearGradient id="colorEmitidoPremium" x1="0" y1="0" x2="0" y2="1">
                      <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.3}/>
+                     <stop offset="50%" stopColor="#94a3b8" stopOpacity={0.1}/>
                      <stop offset="95%" stopColor="#94a3b8" stopOpacity={0}/>
                    </linearGradient>
-                   <linearGradient id="colorExecutado" x1="0" y1="0" x2="0" y2="1">
-                     <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
-                     <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
+                   <linearGradient id="colorExecutadoPremium" x1="0" y1="0" x2="0" y2="1">
+                     <stop offset="5%" stopColor="var(--brand-500)" stopOpacity={0.4}/>
+                     <stop offset="50%" stopColor="var(--brand-500)" stopOpacity={0.15}/>
+                     <stop offset="95%" stopColor="var(--brand-500)" stopOpacity={0}/>
                    </linearGradient>
                  </defs>
-                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" opacity={0.5} />
+                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" opacity={0.4} />
                  <XAxis 
                    dataKey="data" 
                    axisLine={false} 
                    tickLine={false} 
-                   tick={{ fill: 'var(--text-muted)', fontSize: 12, fontWeight: 600 }}
+                   tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 'bold' }}
                    tickFormatter={(val) => val ? val.split('-').reverse().slice(0,2).join('/') : ''}
                    dy={10}
                  />
                  <YAxis 
                    axisLine={false} 
                    tickLine={false} 
-                   tick={{ fill: 'var(--text-muted)', fontSize: 12, fontWeight: 600 }}
+                   tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 'bold' }}
                  />
                  <Tooltip 
-                   contentStyle={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-color)', borderRadius: '1rem', color: 'var(--text-main)', fontWeight: 'bold', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
-                   itemStyle={{ color: 'var(--text-main)' }}
-                   labelFormatter={(val) => `Data: ${val ? val.split('-').reverse().join('/') : ''}`}
+                   content={<CustomTooltip />}
+                   cursor={{ stroke: 'var(--brand-500)', strokeWidth: 1, strokeDasharray: '4 4', opacity: 0.3 }}
                  />
-                 <Area type="monotone" dataKey="emitido" name="Emitido" stroke="#94a3b8" strokeWidth={3} fillOpacity={1} fill="url(#colorEmitido)" activeDot={{ r: 6, fill: '#94a3b8' }} />
-                 <Area type="monotone" dataKey="executado" name="Executado" stroke="#0ea5e9" strokeWidth={3} fillOpacity={1} fill="url(#colorExecutado)" activeDot={{ r: 6, fill: '#0ea5e9', stroke: 'white', strokeWidth: 2 }} />
+                 <Area 
+                    type="monotone" 
+                    dataKey="emitido" 
+                    name="Emitido" 
+                    stroke="#94a3b8" 
+                    strokeWidth={3} 
+                    fillOpacity={1} 
+                    fill="url(#colorEmitidoPremium)" 
+                    activeDot={false}
+                    animationDuration={1500} 
+                 />
+                 <Area 
+                    type="monotone" 
+                    dataKey="executado" 
+                    name="Executado" 
+                    stroke="var(--brand-500)" 
+                    strokeWidth={4} 
+                    fillOpacity={1} 
+                    fill="url(#colorExecutadoPremium)" 
+                    activeDot={{ r: 6, strokeWidth: 0, fill: 'var(--brand-500)', className: "shadow-[0_0_10px_rgba(59,130,246,0.8)] drop-shadow-md" }}
+                    animationDuration={1500} 
+                 />
                </AreaChart>
             </ResponsiveContainer>
         </div>
@@ -143,7 +248,7 @@ const Cortes = () => {
       {/* Detail Table */}
       <div className="space-y-4">
          <div className="flex items-center gap-2">
-            <div className="w-1 h-6 bg-brand-500 rounded-full"></div>
+            <div className="w-1 h-6 bg-brand-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
             <h3 className="text-lg font-black heading-text text-[var(--text-main)]">Resumo por Regional</h3>
          </div>
          
@@ -167,7 +272,7 @@ const Cortes = () => {
                       const pctRecebido = row.valorCobrado > 0 ? (row.valorPago / row.valorCobrado) * 100 : 0;
                       
                       return (
-                         <tr key={i} className="hover:bg-[var(--bg-main)]/30 transition-colors group">
+                         <tr key={i} className="hover:bg-brand-500/5 transition-colors group">
                             <td className="p-4 md:p-5 font-bold text-[var(--text-main)]">{row.regional}</td>
                             <td className="p-4 md:p-5 font-bold text-slate-500 dark:text-slate-400 text-right">{formatterNumber.format(row.emitido)}</td>
                             <td className="p-4 md:p-5 font-black text-brand-600 dark:text-brand-400 text-right">{formatterNumber.format(row.executado)}</td>

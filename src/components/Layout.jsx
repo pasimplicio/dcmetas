@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Database, Sun, Moon, Menu, Landmark, Mail, Code, Droplets, ClipboardCheck, Scissors, Banknote, ChevronDown, Settings } from 'lucide-react';
+import { LayoutDashboard, Database, Sun, Moon, Menu, Landmark, Mail, Code, Droplets, ClipboardCheck, Scissors, Banknote, ChevronDown, Settings, TrendingUp, Activity } from 'lucide-react';
 import MonthYearSelector from './MonthYearSelector';
 import RegionalSelector from './RegionalSelector';
 
@@ -10,7 +10,16 @@ const Sidebar = ({ isOpen, toggleSidebar, theme, toggleTheme }) => {
   const [expandedMenu, setExpandedMenu] = useState(null);
 
   const navItems = [
-    { to: "/", icon: <Banknote size={20} />, label: "ARRECADAÇÃO" },
+    { 
+      to: "/arrecadacao", 
+      icon: <Banknote size={20} />, 
+      label: "ARRECADAÇÃO",
+      subItems: [
+        { label: "Visão Geral", to: "/arrecadacao/resumo" },
+        { label: "Comparativo Temporal", to: "/arrecadacao/comparativo" },
+        { label: "Curva de Recebimento", to: "/arrecadacao/curva" }
+      ]
+    },
     { to: "/hidrometracao", icon: <Droplets size={20} />, label: "HIDROMETRAÇÃO" },
     { 
       to: "/os", 
@@ -57,7 +66,7 @@ const Sidebar = ({ isOpen, toggleSidebar, theme, toggleTheme }) => {
           {navItems.map((item) => {
             const hasSubMenu = item.subItems && item.subItems.length > 0;
             const isExpanded = expandedMenu === item.to;
-            const isDeveloped = item.to === "/" || item.to === "/cortes" || item.to === "/configuracoes" || item.to === "/os";
+            const isDeveloped = item.to === "/" || item.to === "/cortes" || item.to === "/configuracoes" || item.to === "/os" || item.to === "/arrecadacao";
 
             const renderLinkContent = (isActive = false) => (
               <>
@@ -113,7 +122,7 @@ const Sidebar = ({ isOpen, toggleSidebar, theme, toggleTheme }) => {
                   <div className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-40 opacity-100 mt-1 mb-2' : 'max-h-0 opacity-0'}`}>
                     <div className="flex flex-col gap-1 pl-14 pr-4 border-l-2 border-brand-500/20 ml-8 py-1">
                       {item.subItems.map((sub, idx) => {
-                        const isSubDeveloped = sub.to === "/os/pendentes";
+                        const isSubDeveloped = sub.to.startsWith("/os/pendentes") || sub.to.startsWith("/arrecadacao");
                         
                         if (isSubDeveloped) {
                           return (
@@ -210,7 +219,12 @@ const Layout = () => {
   const getPageTitle = () => {
     switch (location.pathname) {
       case '/':
-        return { title: 'Acompanhamento Arrecadação', icon: <Banknote size={24} /> };
+      case '/arrecadacao/resumo':
+        return { title: 'Visão Geral Arrecadação', icon: <Banknote size={24} /> };
+      case '/arrecadacao/comparativo':
+        return { title: 'Comparativo YoY / MoM', icon: <TrendingUp size={24} /> };
+      case '/arrecadacao/curva':
+        return { title: 'Curva de Recebimento', icon: <Activity size={24} /> };
       case '/cortes':
         return { title: 'Acompanhamento de Cortes', icon: <Scissors size={24} /> };
       case '/os/pendentes':

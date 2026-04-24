@@ -53,18 +53,6 @@ const ImportData = () => {
     fileInputRefs.current[id].click();
   };
 
-  const sendInBatches = async (type, rows, onBatchProgress) => {
-    const totalBatches = Math.ceil(rows.length / BATCH_SIZE);
-    
-    for (let i = 0; i < totalBatches; i++) {
-      const batch = rows.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE);
-      const isFirst = i === 0;
-      
-      await api.post('/import', { type, data: batch, clearFirst: isFirst });
-
-      onBatchProgress(Math.round(((i + 1) / totalBatches) * 100));
-    }
-  };
 
   const onFileChange = async (e, id) => {
     const file = e.target.files[0];
@@ -75,11 +63,14 @@ const ImportData = () => {
     setProgress(0);
     setErrorParse(null);
     
+    const BATCH = 50000;
+
     try {
-      // Phase 1: Parse CSV
+      // Phase 1: Parse CSV (0-40%)
       let rows = await parseCSV(file, id, (prog) => {
-          const pct = Math.round((prog.loaded / prog.total) * 50); // 0-50% for parsing
+          const pct = Math.round((prog.loaded / prog.total) * 40);
           setProgress(pct);
+          setLoadingText(`Lendo ${Math.round(prog.loaded / 1024 / 1024)}MB...`);
       });
       
       console.log(`Parsed ${rows.length} rows for ${id}`);
@@ -87,21 +78,27 @@ const ImportData = () => {
         throw new Error("O arquivo parece estar vazio ou com formato inválido.");
       }
 
-      // Phase 2: Send in batches
-      setLoadingText(`Enviando ${rows.length.toLocaleString('pt-BR')} registros...`);
+      // Phase 2: Send in large batches (40-100%)
+      const totalBatches = Math.ceil(rows.length / BATCH);
+      
+      for (let i = 0; i < totalBatches; i++) {
+        const batch = rows.slice(i * BATCH, (i + 1) * BATCH);
+        const isFirst = i === 0;
+        
+        setLoadingText(`Gravando ${((i + 1) * BATCH > rows.length ? rows.length : (i + 1) * BATCH).toLocaleString('pt-BR')} / ${rows.length.toLocaleString('pt-BR')}`);
+        await api.post('/import', { type: id, data: batch, clearFirst: isFirst });
+        
+        setProgress(40 + Math.round(((i + 1) / totalBatches) * 60));
+      }
 
-      await sendInBatches(id, rows, (batchPct) => {
-        // 50-100% for uploading
-        const currentProgress = 50 + Math.round(batchPct / 2);
-        setProgress(currentProgress);
-        setLoadingText(`Gravando...`);
-      });
+      // Free memory
+      rows = null;
 
       await fetchStats();
       setProgress(100);
       setLoadingText('Concluído!');
     } catch (err) {
-      console.error("Local Upload Error:", err);
+      console.error("Upload Error:", err);
       setErrorParse(`Erro ao processar: ${err.message}`);
     } finally {
       setTimeout(() => {

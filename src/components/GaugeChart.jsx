@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-const GaugeChart = ({ percent, size = 180, strokeWidth = 24 }) => {
+const GaugeChart = ({ percent, size = 180, strokeWidth = 24, inverseColor = false }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * Math.PI; // Half circle
 
@@ -10,7 +10,17 @@ const GaugeChart = ({ percent, size = 180, strokeWidth = 24 }) => {
     return circumference - (visualPercent / 100) * circumference;
   }, [percent, circumference]);
 
-  const colorClass = 'text-[var(--brand-500)]';
+  const colorClass = useMemo(() => {
+    const p = Math.min(percent, 100);
+    // Lógica normal: 100% é bom (verde), baixo é ruim (vermelho)
+    // Lógica inversa: 100% é ruim (vermelho), baixo é bom (verde)
+    const isGood = inverseColor ? p < 5 : p >= 90;
+    const isAverage = inverseColor ? (p >= 5 && p < 15) : (p >= 70 && p < 90);
+    
+    if (isGood) return 'text-emerald-500';
+    if (isAverage) return 'text-amber-500';
+    return 'text-rose-500';
+  }, [percent, inverseColor]);
 
   const isInvalid = isNaN(percent) || !isFinite(percent);
   const formattedPercent = isInvalid ? "0,00" : percent.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });

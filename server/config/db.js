@@ -95,7 +95,7 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS faturamento (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    localidade_id INTEGER,
+    localidade INTEGER,
     referencia TEXT,
     data_faturamento TEXT,
     valor_faturado REAL
@@ -104,7 +104,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS pagamentos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     matricula INTEGER,
-    localidade_id INTEGER,
+    localidade INTEGER,
     numero_conta TEXT,
     referencia_pagamento TEXT,
     data_pagamento TEXT,
@@ -122,10 +122,11 @@ db.exec(`
 
   -- Índices de Faturamento e Pagamentos (Performance para milhões de registros)
   CREATE INDEX IF NOT EXISTS idx_fat_ref ON faturamento(referencia);
-  CREATE INDEX IF NOT EXISTS idx_fat_loc ON faturamento(localidade_id);
+  CREATE INDEX IF NOT EXISTS idx_fat_loc ON faturamento(localidade);
   CREATE INDEX IF NOT EXISTS idx_pag_ref ON pagamentos(referencia_pagamento);
-  CREATE INDEX IF NOT EXISTS idx_pag_loc ON pagamentos(localidade_id);
+  CREATE INDEX IF NOT EXISTS idx_pag_loc ON pagamentos(localidade);
   CREATE INDEX IF NOT EXISTS idx_pag_mat ON pagamentos(matricula);
+  CREATE INDEX IF NOT EXISTS idx_pag_data ON pagamentos(data_pagamento);
 
   -- Índices de performance
   CREATE INDEX IF NOT EXISTS idx_os_performance ON ordens_servico(situacao_os, data_geracao DESC, nr_os DESC);

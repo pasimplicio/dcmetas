@@ -4,11 +4,16 @@ import GaugeChart from './GaugeChart';
 const formatterMoney = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const formatterNumber = new Intl.NumberFormat('pt-BR');
 
-const KpiCard = ({ title, data, isCurrency = true }) => {
+const KpiCard = ({ title, data, isCurrency = true, isPercentage = false, inverseColor = false }) => {
   const { realizado = 0, previsto = 0 } = data;
-  const porcentagem = previsto > 0 ? (realizado / previsto) * 100 : 0;
   
-  const format = (val) => isCurrency ? formatterMoney.format(val) : formatterNumber.format(val);
+  // Para inadimplência, o "realizado" já é a porcentagem
+  const porcentagem = isPercentage ? realizado : (previsto > 0 ? (realizado / previsto) * 100 : 0);
+  
+  const format = (val) => {
+    if (isPercentage) return `${val.toFixed(2)}%`;
+    return isCurrency ? formatterMoney.format(val) : formatterNumber.format(val);
+  };
 
   return (
     <div className="bg-[var(--bg-surface)] p-6 flex flex-col items-center rounded-3xl border border-[var(--border-color)] shadow-xl shadow-brand-500/5 transition-all card-hover group">
@@ -18,31 +23,35 @@ const KpiCard = ({ title, data, isCurrency = true }) => {
       </div>
       
       <div className="mb-6 drop-shadow-md transform group-hover:scale-105 transition-transform duration-500">
-        <GaugeChart percent={porcentagem} size={160} strokeWidth={24} />
+        <GaugeChart percent={porcentagem} size={160} strokeWidth={24} inverseColor={inverseColor} />
       </div>
       
       <div className="w-full flex flex-col items-center gap-3 mt-auto">
           <div className="flex flex-col items-center">
              <div className="flex items-center gap-1.5 text-brand-500">
                 <TrendingUp size={14} />
-                <span className="text-[10px] font-bold uppercase tracking-wider">Realizado</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">{isPercentage ? 'Valor Atual' : 'Realizado'}</span>
              </div>
              <span className="text-xl font-black heading-text text-[var(--text-main)] tabular-nums leading-none mt-1">
                {format(realizado)}
              </span>
           </div>
 
-          <div className="w-12 h-[1px] bg-[var(--border-color)] my-1"></div>
+          {!isPercentage && (
+            <>
+              <div className="w-12 h-[1px] bg-[var(--border-color)] my-1"></div>
 
-          <div className="flex flex-col items-center">
-             <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
-                <Target size={14} />
-                <span className="text-[10px] font-bold uppercase tracking-wider">Previsto</span>
-             </div>
-             <span className="text-sm font-bold text-[var(--text-main)] opacity-80 tabular-nums leading-none mt-1">
-               {format(previsto)}
-             </span>
-          </div>
+              <div className="flex flex-col items-center">
+                 <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
+                    <Target size={14} />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Previsto</span>
+                 </div>
+                 <span className="text-sm font-bold text-[var(--text-main)] opacity-80 tabular-nums leading-none mt-1">
+                   {format(previsto)}
+                 </span>
+              </div>
+            </>
+          )}
       </div>
     </div>
   );

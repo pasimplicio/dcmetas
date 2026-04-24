@@ -19,17 +19,12 @@ export const parseCSV = async (file, type, onProgress) => {
   let input = file;
   let totalSize = file.size;
   
-  // Fix corrupted CSV format from system exports where fields with commas
-  // trigger Excel/PowerBI to wrap the ENTIRE row in quotes instead of just the field.
   if (type === 'meta_regional' || type === 'meta_localidade') {
      const text = await file.text();
      input = text.split(/\r?\n/).map(line => {
         let clean = line.trim();
-        // Detect whole-line quoting: starts with ", ends with ", and has internal structure
         if (clean.startsWith('"') && clean.endsWith('"')) {
-           // Unwrap and unescape double quotes ("" -> ")
            const unwrapped = clean.substring(1, clean.length - 1).replace(/""/g, '"');
-           // Simple heuristic: if it contains commas after unwrapping, it was likely a wrapped record
            if (unwrapped.includes(',') || unwrapped.includes(';')) return unwrapped;
         }
         return clean;
@@ -44,7 +39,7 @@ export const parseCSV = async (file, type, onProgress) => {
       header: true,
       skipEmptyLines: 'greedy',
       dynamicTyping: false,
-      chunkSize: 1024 * 1024,
+      chunkSize: 1024 * 1024 * 2, // 2MB chunks for speed
       chunk: (results, parser) => {
         try {
           const transformed = transformData(results.data, type, globalRowIndex);
@@ -264,20 +259,20 @@ const transformData = (data, type, startIdx = 0) => {
       });
     case 'faturamento':
       return data.map(row => ({
-          localidade_id: parseInt(row['LOCALIDADE'] || row['Localidade'] || row['ID LOCALIDADE'] || row['CODIGO LOCALIDADE'] || 0),
-          referencia: normalizeRef(row['REFERENCIA'] || row['Referencia'] || row['REF'] || ''),
-          data_faturamento: row['DATA FATURAMENTO'] || row['Data Faturamento'] || row['DATA'] || '',
-          valor_faturado: parseMonetary(row['VALOR FATURADO'] || row['Valor Faturado'] || row['VALOR'] || 0)
-      }));
+          localidade: parseInt(row['LOCALIDADE'] || row['Localidade'] || row['ID LOCALIDADE'] || row['CODIGO LOCALIDADE'] || row['ID_LOCALIDADE'] || row['LOCALIDADE_ID'] || 0),
+          referencia: normalizeRef(row['REFERENCIA'] || row['Referencia'] || row['REF'] || row['MES/ANO'] || ''),
+          data_faturamento: row['DATA FATURAMENTO'] || row['Data Faturamento'] || row['DATA'] || row['DATA_FATURAMENTO'] || '',
+          valor_faturado: parseMonetary(row['VALOR FATURADO'] || row['Valor Faturado'] || row['VALOR'] || row['VALOR_FATURADO'] || 0)
+      })).filter(r => r.localidade > 0 || r.valor_faturado > 0);
     case 'pagamentos':
       return data.map(row => ({
-          matricula: parseInt(row['MATRICULA'] || row['Matricula'] || row['ID_MATRICULA'] || 0),
-          localidade_id: parseInt(row['CODIGO LOCALIDADE'] || row['Localidade'] || row['LOCALIDADE'] || row['ID LOCALIDADE'] || 0),
-          numero_conta: row['NUMERO CONTA'] || row['Numero Conta'] || row['CONTA'] || '',
-          referencia_pagamento: normalizeRef(row['REFERENCIA PAGAMENTO'] || row['Referencia'] || row['REF_PAGAMENTO'] || row['REFERENCIA'] || ''),
-          data_pagamento: row['DATA PAGAMENTO'] || row['Data Pagamento'] || row['DATA'] || '',
-          valor_pagamento: parseMonetary(row['VALOR PAGAMENTO'] || row['Valor Pagamento'] || row['VALOR'] || 0)
-      }));
+          matricula: parseInt(row['MATRICULA'] || row['Matricula'] || row['ID_MATRICULA'] || row['ID MATRICULA'] || 0),
+          localidade: parseInt(row['CODIGO LOCALIDADE'] || row['Localidade'] || row['LOCALIDADE'] || row['ID LOCALIDADE'] || row['ID_LOCALIDADE'] || row['LOCALIDADE_ID'] || 0),
+          numero_conta: row['NUMERO CONTA'] || row['Numero Conta'] || row['CONTA'] || row['NR CONTA'] || '',
+          referencia_pagamento: normalizeRef(row['REFERENCIA PAGAMENTO'] || row['Referencia'] || row['REF_PAGAMENTO'] || row['REFERENCIA'] || row['REF'] || ''),
+          data_pagamento: row['DATA PAGAMENTO'] || row['Data Pagamento'] || row['DATA'] || row['DATA_PAGAMENTO'] || '',
+          valor_pagamento: parseMonetary(row['VALOR PAGAMENTO'] || row['Valor Pagamento'] || row['VALOR'] || row['VALOR_PAGAMENTO'] || 0)
+      })).filter(r => r.matricula > 0 || r.valor_pagamento > 0);
     default:
       return [];
   }

@@ -23,7 +23,7 @@ export const useDashboardData = (referencia, regional = 'TODAS') => {
     formaDistribution: [],
     table: [],
     tableMonths: [],
-    check: { faturamento: 0, pagamentos: 0 },
+    resumo: { totalFaturado: 0, totalPago: 0, taxaInadimplencia: 0 },
     loading: true
   });
 
@@ -35,12 +35,15 @@ export const useDashboardData = (referencia, regional = 'TODAS') => {
       try {
         const year = extractYear(referencia);
 
-        // Fetch unified dashboard data from Local Backend with Regional filter
+        const [dashboardData, resumoData] = await Promise.all([
+          api.get('/dashboard', { referencia, regional }),
+          api.get('/arrecadacao/resumo', { referencia, regional })
+        ]);
+
         const { 
           arrecadacaoMes, metasRegMes, metasLocMes, localidades, 
-          yearData, yearMetas, municipioMatrix,
-          totalFaturamento, totalPagamentos
-        } = await api.get('/dashboard', { referencia, regional });
+          yearData, yearMetas, municipioMatrix
+        } = dashboardData;
 
         // ===== KPIs calculation =====
         const kpis = {
@@ -225,7 +228,7 @@ export const useDashboardData = (referencia, regional = 'TODAS') => {
           kpis, daily, annual, regional: regionalRanking, 
           bancoRanking, perfilDistribution, formaDistribution,
           table, tableMonths, 
-          check: { faturamento: totalFaturamento, pagamentos: totalPagamentos },
+          resumo: resumoData,
           loading: false 
         });
       } catch (err) {

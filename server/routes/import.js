@@ -29,12 +29,12 @@ const stmts = {
   `),
   insertFat: db.prepare(`
     INSERT INTO faturamento (
-      localidade_id, referencia, data_faturamento, valor_faturado
+      localidade, referencia, data_faturamento, valor_faturado
     ) VALUES (?, ?, ?, ?)
   `),
   insertPag: db.prepare(`
     INSERT INTO pagamentos (
-      matricula, localidade_id, numero_conta, referencia_pagamento, data_pagamento, valor_pagamento
+      matricula, localidade, numero_conta, referencia_pagamento, data_pagamento, valor_pagamento
     ) VALUES (?, ?, ?, ?, ?, ?)
   `)
 };
@@ -84,14 +84,14 @@ const insertOS = db.transaction((rows) => {
 
 const insertFaturamento = db.transaction((rows) => {
   for (const row of rows) {
-    stmts.insertFat.run(row.localidade_id, row.referencia, row.data_faturamento, row.valor_faturado);
+    stmts.insertFat.run(row.localidade, row.referencia, row.data_faturamento, row.valor_faturado);
   }
 });
 
 const insertPagamentos = db.transaction((rows) => {
   for (const row of rows) {
     stmts.insertPag.run(
-      row.matricula, row.localidade_id, row.numero_conta, 
+      row.matricula, row.localidade, row.numero_conta, 
       row.referencia_pagamento, row.data_pagamento, row.valor_pagamento
     );
   }
@@ -140,6 +140,7 @@ router.post('/clear', adminAuth, (req, res) => {
         db.prepare('DELETE FROM arrecadacao').run();
         db.prepare('DELETE FROM localidades').run();
         db.prepare('DELETE FROM metas_localidade').run();
+        db.prepare('DELETE FROM metas_regional').run();
         db.prepare('DELETE FROM cortes').run();
         db.prepare('DELETE FROM ordens_servico').run();
         db.prepare('DELETE FROM faturamento').run();

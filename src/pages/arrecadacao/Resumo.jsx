@@ -1,18 +1,18 @@
 import { useOutletContext, NavLink } from 'react-router-dom';
-import { Database, Sparkles, Receipt, Coins } from 'lucide-react';
-import KpiCard from '../components/KpiCard';
-import AnnualPerformance from '../components/AnnualPerformance';
-import DailyPerformance from '../components/DailyPerformance';
-import RegionalRanking from '../components/RegionalRanking';
-import DetailTable from '../components/DetailTable';
-import { useDashboardData } from '../hooks/useDashboardData';
+import { Database, Sparkles } from 'lucide-react';
+import KpiCard from '../../components/KpiCard';
+import AnnualPerformance from '../../components/AnnualPerformance';
+import DailyPerformance from '../../components/DailyPerformance';
+import RegionalRanking from '../../components/RegionalRanking';
+import DetailTable from '../../components/DetailTable';
+import { useDashboardData } from '../../hooks/useDashboardData';
 
 const Dashboard = () => {
   const { referencia, regional: selectedRegional } = useOutletContext();
   const { 
     kpis, daily, annual, regional, 
     bancoRanking, perfilDistribution, formaDistribution, 
-    table, tableMonths, check, loading 
+    table, tableMonths, resumo, loading 
   } = useDashboardData(referencia, selectedRegional);
 
   if (loading) {
@@ -61,43 +61,6 @@ const Dashboard = () => {
            <KpiCard title="Público" data={kpis.publico} />
         </div>
       </div>
-
-      {/* Visual Check Row (New) */}
-      {check && (check.faturamento > 0 || check.pagamentos > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-           <div className="glass-panel p-6 border border-brand-500/20 flex items-center justify-between group overflow-hidden relative">
-              <div className="absolute -right-4 -bottom-4 text-brand-500/5 transition-transform group-hover:scale-110 duration-500">
-                 <Receipt size={120} />
-              </div>
-              <div className="relative z-10">
-                 <div className="flex items-center gap-2 text-brand-500 mb-2">
-                    <Receipt size={20} />
-                    <span className="text-xs font-black uppercase tracking-widest">Faturamento</span>
-                 </div>
-                 <h4 className="text-2xl font-black text-[var(--text-main)] heading-text">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(check.faturamento)}
-                 </h4>
-                 <p className="text-xs text-[var(--text-muted)] font-bold mt-1 uppercase">Visual Check (Base fFaturamento)</p>
-              </div>
-           </div>
-
-           <div className="glass-panel p-6 border-emerald-500/20 flex items-center justify-between group overflow-hidden relative">
-              <div className="absolute -right-4 -bottom-4 text-emerald-500/5 transition-transform group-hover:scale-110 duration-500">
-                 <Coins size={120} />
-              </div>
-              <div className="relative z-10">
-                 <div className="flex items-center gap-2 text-emerald-500 mb-2">
-                    <Coins size={20} />
-                    <span className="text-xs font-black uppercase tracking-widest">Pagamentos</span>
-                 </div>
-                 <h4 className="text-2xl font-black text-[var(--text-main)] heading-text">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(check.pagamentos)}
-                 </h4>
-                 <p className="text-xs text-[var(--text-muted)] font-bold mt-1 uppercase">Visual Check (Base fPagamento_2026)</p>
-              </div>
-           </div>
-        </div>
-      )}
 
       {/* Middle Grid - Main Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[400px]">
