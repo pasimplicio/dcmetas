@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Database, Server, CheckCircle2, XCircle, RefreshCw, Wifi, WifiOff, ArrowRight, Info, Shield } from 'lucide-react';
-
-const API_URL = 'http://localhost:3001/api';
+import api from '../services/api.js';
 
 const Configuracoes = () => {
   const navigate = useNavigate();
@@ -19,8 +18,7 @@ const Configuracoes = () => {
     setTesting(true);
     setTestResult(null);
     try {
-      const res = await fetch(`${API_URL}/datasource/test`);
-      const data = await res.json();
+      const data = await api.get('/datasource/test');
       setTestResult(data);
     } catch (err) {
       setTestResult({ success: false, error: 'Falha ao conectar ao servidor local.' });
@@ -31,8 +29,7 @@ const Configuracoes = () => {
 
   const fetchStatus = async () => {
     try {
-      const res = await fetch(`${API_URL}/datasource`);
-      const data = await res.json();
+      const data = await api.get('/datasource');
       setActiveSource(data.active);
       setPgConfigured(data.pgConfigured);
       setPgHost(data.pgHost);
@@ -53,12 +50,7 @@ const Configuracoes = () => {
   const handleSwitch = async (source) => {
     setSwitching(true);
     try {
-      const res = await fetch(`${API_URL}/datasource`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source })
-      });
-      const data = await res.json();
+      const data = await api.post('/datasource', { source });
       if (data.success) {
         setActiveSource(data.active);
       } else {

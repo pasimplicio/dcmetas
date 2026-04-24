@@ -2,11 +2,10 @@
 // All data is stored in SQLite via the Express backend (server.js port 3001).
 // This module is kept as a placeholder for potential future client-side caching.
 
-const API_URL = 'http://localhost:3001/api';
+import api from '../services/api.js';
 
 export const getStats = async () => {
-  const res = await fetch(`${API_URL}/stats`);
-  return await res.json();
+  return await api.get('/stats');
 };
 
-export default { API_URL };
+export default { getUrl: api.getUrl };

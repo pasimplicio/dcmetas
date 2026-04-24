@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { UploadCloud, CheckCircle2, AlertCircle, RefreshCw, Trash2, Info } from 'lucide-react';
 import { parseCSV } from '../services/csvParser';
-
-const API_URL = 'http://localhost:3001/api';
+import api from '../services/api.js';
 
 const BATCH_SIZE = 5000;
 
@@ -27,8 +26,7 @@ const ImportData = () => {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch(`${API_URL}/stats`);
-      const data = await res.json();
+      const data = await api.get('/stats');
       setStats({
         localidade: data.localidade,
         arrecadacao: data.arrecadacao,
@@ -58,16 +56,7 @@ const ImportData = () => {
       const batch = rows.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE);
       const isFirst = i === 0;
       
-      const response = await fetch(`${API_URL}/import`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, data: batch, clearFirst: isFirst })
-      });
-
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.error || `Falha no batch ${i + 1}/${totalBatches}`);
-      }
+      await api.post('/import', { type, data: batch, clearFirst: isFirst });
 
       onBatchProgress(Math.round(((i + 1) / totalBatches) * 100));
     }
@@ -126,11 +115,7 @@ const ImportData = () => {
       setErrorParse(null);
       
       try {
-          const res = await fetch(`${API_URL}/clear`, { method: 'POST' });
-          if (!res.ok) {
-              const errData = await res.json().catch(() => ({}));
-              throw new Error(errData.error || 'Falha ao limpar banco.');
-          }
+          await api.post('/clear', {});
           await fetchStats();
       } catch (err) {
           console.error("Clear Error:", err);

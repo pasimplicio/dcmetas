@@ -23,3 +23,9 @@ Thumbs.db
 
 # CSV data files
 csv/
+
+# Persistent data (Docker)
+data/
+
+# Backups
+backups/

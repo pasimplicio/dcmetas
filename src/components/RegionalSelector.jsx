@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MapPin, ChevronDown } from 'lucide-react';
-
-const API_URL = 'http://localhost:3001/api';
+import api from '../services/api.js';
 
 const RegionalSelector = ({ regional, onChange }) => {
   const [regionais, setRegionais] = useState([]);
@@ -9,9 +8,7 @@ const RegionalSelector = ({ regional, onChange }) => {
 
   const fetchRegionais = async () => {
     try {
-      const res = await fetch(`${API_URL}/regionais`);
-      if (!res.ok) throw new Error('Falha ao buscar regionais');
-      const data = await res.json();
+      const data = await api.get('/regionais');
       setRegionais(['TODAS', ...data]);
     } catch (err) {
       console.error(err);

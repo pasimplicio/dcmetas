@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-
-const API_URL = 'http://localhost:3001/api';
+import api from '../services/api.js';
 
 export const useCortesData = (referencia, regional) => {
     const [data, setData] = useState({
@@ -34,17 +33,12 @@ export const useCortesData = (referencia, regional) => {
 
         const fetchData = async () => {
             try {
-                let url = `${API_URL}/cortes?referencia=${encodeURIComponent(referencia)}`;
+                const params = { referencia };
                 if (regional && regional !== 'TODAS') {
-                    url += `&regional=${encodeURIComponent(regional)}`;
+                    params.regional = regional;
                 }
 
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error('Falha ao buscar dados de cortes');
-                }
-                
-                const result = await response.json();
+                const result = await api.get('/cortes', params);
                 
                 if (isMounted) {
                     setData(result);

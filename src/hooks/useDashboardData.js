@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-
-const API_URL = 'http://localhost:3001/api';
+import api from '../services/api.js';
 
 const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
@@ -35,13 +34,10 @@ export const useDashboardData = (referencia, regional = 'TODAS') => {
         const year = extractYear(referencia);
 
         // Fetch unified dashboard data from Local Backend with Regional filter
-        const res = await fetch(`${API_URL}/dashboard?referencia=${referencia}&regional=${regional}`);
-        if (!res.ok) throw new Error('Não foi possível conectar ao servidor local.');
-        
         const { 
           arrecadacaoMes, metasRegMes, metasLocMes, localidades, 
           yearData, yearMetas, municipioMatrix
-        } = await res.json();
+        } = await api.get('/dashboard', { referencia, regional });
 
         // ===== KPIs calculation =====
         const kpis = {

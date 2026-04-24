@@ -8,14 +8,15 @@ import {
   Clock,
   LayoutGrid,
   Building2,
-  Calendar
+  CalendarDays,
+  AlertCircle
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   BarChart, Bar, Cell
 } from 'recharts';
 
-const API_URL = 'http://localhost:3001/api';
+import api from '../services/api.js';
 
 const OSPendentes = () => {
   const { 
@@ -34,7 +35,7 @@ const OSPendentes = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({
+      const result = await api.get('/os/pendentes', {
         regional: globalRegional,
         responsavel: osFilters.responsavel,
         setor: osFilters.setor,
@@ -42,9 +43,6 @@ const OSPendentes = () => {
         mes: mes,
         numero_os: searchTerm
       });
-      
-      const res = await fetch(`${API_URL}/os/pendentes?${params.toString()}`);
-      const result = await res.json();
       setData(result);
       
       if (result.filterOptions) {
@@ -61,7 +59,7 @@ const OSPendentes = () => {
   };
 
   const handleExport = () => {
-    const params = new URLSearchParams({
+    api.download('/os/pendentes/export', {
       regional: globalRegional,
       responsavel: osFilters.responsavel,
       setor: osFilters.setor,
@@ -69,7 +67,6 @@ const OSPendentes = () => {
       mes: mes,
       numero_os: searchTerm
     });
-    window.location.href = `${API_URL}/os/pendentes/export?${params.toString()}`;
   };
 
   useEffect(() => {
@@ -100,7 +97,7 @@ const OSPendentes = () => {
             <div>
               <p className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)]">Total de O.S. Pendente</p>
               <h2 className="text-4xl font-black text-[var(--text-main)] tabular-nums leading-none">
-                {data?.totalPendentes.toLocaleString('pt-BR')}
+                {(data?.totalPendentes || 0).toLocaleString('pt-BR')}
               </h2>
             </div>
           </div>
@@ -108,7 +105,7 @@ const OSPendentes = () => {
           {/* KPI Card 2: Tempo Médio */}
           <div className="glass-panel px-8 py-4 flex items-center gap-6 border-l-4 border-amber-500 min-w-[280px]">
             <div className="p-3 bg-amber-500/10 dark:bg-amber-500/20 rounded-2xl text-amber-500">
-              <Calendar size={28} />
+              <CalendarDays size={28} />
             </div>
             <div>
               <p className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)]">Tempo Médio Pendência</p>
@@ -122,6 +119,19 @@ const OSPendentes = () => {
                 </h2>
                 <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-tighter">hrs</span>
               </div>
+            </div>
+          </div>
+
+          {/* KPI Card 3: Alerta Cortes */}
+          <div className="glass-panel px-8 py-4 flex items-center gap-6 border-l-4 border-rose-500 min-w-[280px]">
+            <div className="p-3 bg-rose-500/10 dark:bg-rose-500/20 rounded-2xl text-rose-500 animate-pulse">
+              <AlertCircle size={28} />
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)]">Cortes por Débito</p>
+              <h2 className="text-4xl font-black text-rose-600 dark:text-rose-400 tabular-nums leading-none">
+                {(data?.totalCortesDebito || 0).toLocaleString('pt-BR')}
+              </h2>
             </div>
           </div>
         </div>
