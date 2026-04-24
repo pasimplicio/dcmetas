@@ -1,25 +1,13 @@
-# Dependencies
-node_modules/
-
-# Database files
+node_modules
+.env
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
-
-# Build output
-dist/
-
-# Environment files
-.env
-.env.local
-
-# IDE
-.vscode/
-.idea/
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# CSV data files
+data/
+backups/
 csv/
+dist/
+.git
+.gitignore
+.vscode
+*.md

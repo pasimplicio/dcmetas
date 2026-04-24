@@ -127,8 +127,25 @@ app.use('/api', osRouter);
 app.use('/api', importRouter);
 app.use('/api', datasourceRouter);
 
+// ========== Frontend Estático (Produção/Docker) ==========
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const distPath = path.join(__dirname, 'dist');
+
+import fsCheck from 'fs';
+if (fsCheck.existsSync(distPath)) {
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+    });
+    console.log('📁 Servindo frontend estático de ./dist');
+}
+
 // ========== Inicialização ==========
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
     console.log(`🚀 Server running at http://localhost:${port}`);
     console.log(`📦 Fonte de dados ativa: ${(process.env.DATA_SOURCE || 'sqlite').toUpperCase()}`);
     if (process.env.PG_HOST) {
